@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "624453793810",
+    "project_id": "munir-21f4a",
+    "storage_bucket": "munir-21f4a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:624453793810:android:6cfc4c000852d37d8a80cb",
+        "android_client_info": {
+          "package_name": "com.example.munir_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBdkD4xNdQZfB-Q0XQQ06mxSWUqykEAn1A"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

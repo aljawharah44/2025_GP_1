@@ -1,5 +1,26 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
+  runApp(MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'My Graduation Project',
+      home: Scaffold(
+        appBar: AppBar(title: Text('Welcome')),
+        body: Center(child: Text('Hello Firebase!')),
+      ),
+    );
+  }
+}
+
+/*
 void main() {
   runApp(const MyApp());
 }
@@ -120,3 +141,4 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 }
+*/
