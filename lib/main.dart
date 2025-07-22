@@ -1,26 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-
+import 'screens/splash_screen.dart'; // تأكد إن المسار صحيح
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(const MyApp());
+  await Firebase.initializeApp(); // ضروري إذا كنت تستخدم Firebase
+  runApp(const MunirApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MunirApp extends StatelessWidget {
+  const MunirApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text("Firebase Test")),
-        body: const Center(child: Text("Firebase initialized successfully!")),
+      title: 'Munir App',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        fontFamily: 'YourFontName', // غيرها إذا عندك خط
+        primarySwatch: Colors.deepPurple,
+        scaffoldBackgroundColor: Colors.white,
       ),
+      home: const SplashScreen(),
     );
   }
 }
+
 /*
 void main() {
   runApp(const MyApp());
