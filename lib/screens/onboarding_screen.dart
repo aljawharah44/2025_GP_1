@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'get_started_screen.dart';
+import 'welcome_screen.dart';
 
 class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({Key? key}) : super(key: key);
@@ -29,11 +29,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   void _nextPage() {
     if (_currentPage < images.length - 1) {
-      _pageController.nextPage(duration: Duration(milliseconds: 300), curve: Curves.ease);
+      _pageController.nextPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
     } else {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
       );
     }
   }
@@ -41,13 +44,16 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   void _skip() {
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (_) => const GetStartedScreen()),
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
     );
   }
 
   void _prevPage() {
     if (_currentPage > 0) {
-      _pageController.previousPage(duration: Duration(milliseconds: 300), curve: Curves.ease);
+      _pageController.previousPage(
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.ease,
+      );
     }
   }
 
@@ -66,17 +72,17 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                /// ✅ الصف العلوي: رقم الصفحة + زر Skip في نفس المستوى
+                // ✅ العنوان العلوي: (1/2، 2/2) + Skip
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
                       '${index + 1}/${images.length}',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                     TextButton(
                       onPressed: _skip,
-                      child: Text(
+                      child: const Text(
                         "Skip",
                         style: TextStyle(color: Colors.black, fontSize: 18),
                       ),
@@ -84,9 +90,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ],
                 ),
 
-                SizedBox(height: 20),
+                const SizedBox(height: 20),
 
-                /// ✅ الصورة
+                // ✅ الصورة
                 Expanded(
                   child: Image.asset(
                     images[index],
@@ -94,19 +100,19 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                 ),
 
-                /// ✅ العنوان
+                // ✅ العنوان
                 Text(
                   titles[index],
-                  style: TextStyle(
+                  style: const TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.bold,
                   ),
                   textAlign: TextAlign.center,
                 ),
 
-                SizedBox(height: 10),
+                const SizedBox(height: 10),
 
-                /// ✅ الوصف
+                // ✅ الوصف
                 Text(
                   subtitles[index],
                   style: TextStyle(
@@ -116,9 +122,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   textAlign: TextAlign.center,
                 ),
 
-                SizedBox(height: 30),
+                const SizedBox(height: 30),
 
-                /// ✅ Row الأزرار + dot indicators في النص
+                // ✅ أزرار التنقل + dot indicators
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -127,24 +133,24 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color.fromARGB(255, 219, 219, 219),
-                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                         ),
                         onPressed: _prevPage,
-                        child: Text("Previous"),
+                        child: const Text("Previous"),
                       )
                     else
-                      SizedBox(width: 100), // حتى يحافظ على المساحة
+                      const SizedBox(width: 100), // للحفاظ على التوازن
 
-                    // dot indicators في النص
+                    // dot indicators
                     Row(
                       children: List.generate(images.length, (i) {
                         return AnimatedContainer(
-                          duration: Duration(milliseconds: 300),
-                          margin: EdgeInsets.symmetric(horizontal: 4),
-                          width: i == _currentPage ? 24 : 8,
+                          duration: const Duration(milliseconds: 300),
+                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                          width: i == _currentPage ? 30 : 8,
                           height: 8,
                           decoration: BoxDecoration(
-                            color: i == _currentPage ? Color(0xFFB14ABA) : Colors.grey[400],
+                            color: i == _currentPage ? const Color(0xFFB14ABA) : Colors.grey[400],
                             borderRadius: BorderRadius.circular(4),
                           ),
                         );
@@ -154,8 +160,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     // زر Next أو Get Started
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color.fromARGB(255, 176, 94, 184),
-                        padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        backgroundColor: const Color.fromARGB(255, 233, 170, 238),
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                       ),
                       onPressed: _nextPage,
                       child: Text(_currentPage == images.length - 1 ? "Get Started" : "Next"),

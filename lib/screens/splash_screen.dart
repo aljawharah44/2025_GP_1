@@ -16,14 +16,15 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   void navigateToNextScreen() async {
-    await Future.delayed(const Duration(seconds: 3));
-    if (!mounted) return;
+  await Future.delayed(const Duration(seconds: 3));
+  if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const OnboardingScreen()),
-    );
-  }
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
