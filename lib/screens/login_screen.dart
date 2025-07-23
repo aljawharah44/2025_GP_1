@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import '../constants/color.dart';
 import 'signup_screen.dart';
 import 'set_password_screen.dart';
-
+import '../auth_service.dart'; // 👈 هنا الاستيراد
+import "handle_google_signin.dart";
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -42,8 +43,7 @@ class LoginScreen extends StatelessWidget {
               alignment: Alignment.centerRight,
               child: TextButton(
                 onPressed: () {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const SetPasswordScreen()));
-
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const SetPasswordScreen()));
                 },
                 child: const Text("Forget Password?"),
               ),
@@ -60,14 +60,27 @@ class LoginScreen extends StatelessWidget {
               child: const Text("Log In"),
             ),
             const SizedBox(height: 20),
-            const Row(
+            Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.g_mobiledata, size: 36),
-                SizedBox(width: 12),
-                Icon(Icons.facebook, size: 30),
-                SizedBox(width: 12),
-                Icon(Icons.fingerprint, size: 30),
+                GestureDetector(
+                  onTap: () => handleGoogleSignIn(context),
+                  child: Icon(Icons.g_mobiledata, size: 36),
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: const Icon(Icons.facebook, size: 30),
+                  onPressed: () {
+                    // TODO: Facebook login
+                  },
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  icon: const Icon(Icons.fingerprint, size: 30),
+                  onPressed: () {
+                    // TODO: Fingerprint login
+                  },
+                ),
               ],
             ),
             const SizedBox(height: 20),
@@ -83,13 +96,13 @@ class LoginScreen extends StatelessWidget {
                 )
               ],
             ),
-          ],
+          ],  // <-- هنا تغلق قائمة الـ children بقوس مربع فقط
         ),
       ),
     );
   }
 
-  Widget _buildTextField({
+  static Widget _buildTextField({
     required String hint,
     required IconData icon,
     bool obscure = false,
