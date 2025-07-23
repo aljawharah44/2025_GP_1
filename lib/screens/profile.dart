@@ -150,7 +150,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       GestureDetector(
                         onTap: _getCurrentLocationAndFill,
                         child: const Text(
-                          "or Google Map",
+                          "or Use Current Location",
                           style: TextStyle(
                             color: Color(0xFF6B1D73),
                             fontSize: 14,
