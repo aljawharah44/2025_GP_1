@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import './profile.dart';
 import './face_management.dart';
-import './camera.dart'; // ✅ إضافة ملف الكاميرا
+import './camera.dart';
+import './settings.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
   Widget build(BuildContext context) {
+    const purple = Color(0xFF6B1D73);
+
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
@@ -17,7 +25,7 @@ class HomePage extends StatelessWidget {
               Container(
                 height: 220,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF6B1D73),
+                  color: purple,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(40),
                   ),
@@ -74,22 +82,42 @@ class HomePage extends StatelessWidget {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
-        selectedItemColor: const Color(0xFF6B1D73),
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Color(0xFFB14ABA),
+        unselectedItemColor: Colors.black,
+        backgroundColor: Colors.white,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
         type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          } else if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            );
+          }
+        },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.warning),
+            icon: Icon(Icons.notifications_none),
+            label: 'Reminders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.warning_amber_outlined),
             label: 'Emergency',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Setting'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );

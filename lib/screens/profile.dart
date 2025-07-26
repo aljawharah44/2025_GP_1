@@ -350,27 +350,35 @@ class _ProfilePageState extends State<ProfilePage> {
             child: Stack(
               children: [
                 Positioned(
-                  top: 20,
-                  left: 20,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white.withOpacity(0.22),
-                    radius: 35,
-                  ),
-                ),
-                Positioned(
-                  top: 50,
-                  right: 30,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white.withOpacity(0.22),
-                    radius: 25,
-                  ),
-                ),
-                Positioned(
-                  bottom: 0,
-                  left: 40,
+                  top: -12,
+                  left: -20,
                   child: CircleAvatar(
                     backgroundColor: Colors.white.withOpacity(0.22),
                     radius: 45,
+                  ),
+                ),
+                Positioned(
+                  top: 120,
+                  right: -15,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.22),
+                    radius: 40,
+                  ),
+                ),
+                Positioned(
+                  bottom: 110,
+                  left: 60,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.22),
+                    radius: 15,
+                  ),
+                ),
+                Positioned(
+                  bottom: 210,
+                  left: 240,
+                  child: CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.22),
+                    radius: 15,
                   ),
                 ),
               ],
@@ -378,10 +386,10 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Positioned(
-          top: 30,
+          top: 24,
           left: 6,
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 36),
+            icon: const Icon(Icons.arrow_back, color: Colors.white, size: 40),
             onPressed: () => Navigator.of(context).pop(),
           ),
         ),

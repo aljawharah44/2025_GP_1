@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
+import 'home_page.dart'; // ← للتنقل لصفحة الهوم
 
 class FaceManagementPage extends StatefulWidget {
   const FaceManagementPage({super.key});
@@ -26,21 +27,18 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
       context: context,
       builder: (context) => Dialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        insetPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-        ), // ⬅️ هذا يجعل الحوار أعرض
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16),
         child: Container(
-          width: double.infinity, // ⬅️ عرض كامل داخل المساحة المتاحة
+          width: double.infinity,
           padding: const EdgeInsets.all(20),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ⬅️ السطر العلوي فيه العنوان والأكس
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const SizedBox(width: 24), // مساحة فارغة للتوازن
+                  const SizedBox(width: 24),
                   const Text(
                     "Add Person",
                     style: TextStyle(
@@ -56,11 +54,8 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                 ],
               ),
               const SizedBox(height: 20),
-
               const Text("Name", style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 5),
-
-              // ⬅️ إدخال الاسم
               TextField(
                 controller: _nameController,
                 decoration: InputDecoration(
@@ -75,22 +70,17 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
               const Text(
                 "Upload Face Photo",
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 5),
-
-              // ⬅️ رفع الصورة
               GestureDetector(
                 onTap: _pickImage,
                 child: Container(
                   width: double.infinity,
-                  height: 100, // ⬅️ قللت الارتفاع من 150 إلى 100
-                  padding: const EdgeInsets.all(
-                    12,
-                  ), // ⬅️ قللت الـ padding من 16 إلى 12
+                  height: 100,
+                  padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -109,18 +99,16 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                           children: [
                             Image.asset(
                               'assets/images/upload_icon.png',
-                              height: 30, // ⬅️ قللت الحجم من 40 إلى 30
+                              height: 30,
                               color: Color(0xFF6B1D73),
                             ),
-                            const SizedBox(
-                              height: 8,
-                            ), // ⬅️ قللت المسافة من 10 إلى 8
+                            const SizedBox(height: 8),
                             const Text(
                               "Click to Upload Photo",
                               style: TextStyle(
                                 color: Color(0xFF6B1D73),
                                 fontWeight: FontWeight.w500,
-                                fontSize: 12, // ⬅️ أضفت حجم خط أصغر
+                                fontSize: 12,
                               ),
                             ),
                           ],
@@ -136,8 +124,6 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                 ),
               ),
               const SizedBox(height: 20),
-
-              // ⬅️ زر Add
               Center(
                 child: ElevatedButton.icon(
                   onPressed: () {
@@ -147,17 +133,10 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                       _nameController.clear();
                     });
                   },
-                  icon: const Icon(
-                    Icons.add,
-                    color: Colors.white,
-                    size: 20,
-                  ), // ⬅️ أيقونة أكبر
+                  icon: const Icon(Icons.add, color: Colors.white, size: 20),
                   label: const Text(
                     "Add",
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 16, // ⬅️ خط أكبر
-                    ),
+                    style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF6B1D73),
@@ -165,8 +144,8 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 25, // ⬅️ زدت العرض من 24 إلى 32
-                      vertical: 13, // ⬅️ زدت الارتفاع من 12 إلى 14
+                      horizontal: 25,
+                      vertical: 13,
                     ),
                   ),
                 ),
@@ -257,14 +236,14 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                             ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
-                              children: [
-                                const Icon(
+                              children: const [
+                                Icon(
                                   Icons.search,
                                   color: Color(0xFFB14ABA),
                                   size: 25,
                                 ),
-                                const SizedBox(width: 8),
-                                const Expanded(
+                                SizedBox(width: 8),
+                                Expanded(
                                   child: TextField(
                                     decoration: InputDecoration(
                                       hintText: "Search",
@@ -278,12 +257,6 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                                     ),
                                     style: TextStyle(color: Color(0xFFB14ABA)),
                                   ),
-                                ),
-                                Image.asset(
-                                  'assets/images/filter.png',
-                                  height: 22,
-                                  width: 22,
-                                  color: Color(0xFFB14ABA),
                                 ),
                               ],
                             ),
@@ -341,15 +314,29 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
         selectedItemColor: const Color(0xFFB14ABA),
-        unselectedItemColor: Colors.grey,
-        type: BottomNavigationBarType.fixed,
-        showUnselectedLabels: true,
+        unselectedItemColor: Colors.black,
+        backgroundColor: Colors.white,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
+        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
+        type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          } else if (index == 2) {
+            _showAddDialog();
+          }
+        },
         items: [
-          const BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
+          const BottomNavigationBarItem(
+            icon: Icon(Icons.notifications_none),
+            label: 'Reminders',
           ),
           BottomNavigationBarItem(
             icon: Transform.translate(
@@ -366,15 +353,14 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
             label: '',
           ),
           const BottomNavigationBarItem(
-            icon: Icon(Icons.warning),
+            icon: Icon(Icons.warning_amber_outlined),
             label: 'Emergency',
           ),
           const BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Setting',
+            label: 'Settings',
           ),
         ],
-        onTap: (index) {},
       ),
     );
   }
