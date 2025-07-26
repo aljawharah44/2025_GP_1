@@ -2,11 +2,85 @@ import 'package:flutter/material.dart';
 import '../constants/color.dart';
 import 'signup_screen.dart';
 import 'set_password_screen.dart';
-import '../auth_service.dart'; // 👈 هنا الاستيراد
-import "handle_google_signin.dart";
+import 'get_started.dart';
+import '../services/auth_service.dart';
+import '../services/google_signin_handler.dart';
+import 'package:local_auth/local_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
-class LoginScreen extends StatelessWidget {
+class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
+
+  @override
+  State<LoginScreen> createState() => _LoginScreenState();
+}
+
+class _LoginScreenState extends State<LoginScreen> {
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+  final LocalAuthentication _localAuth = LocalAuthentication();
+
+  void _login() async {
+  final email = _emailController.text.trim();
+  final password = _passwordController.text.trim();
+
+  if (email.isEmpty || password.isEmpty) {
+    _showMessage("Please fill in all fields");
+    return;
+  }
+
+  final user = await AuthService.signInWithEmail(
+    email: email,
+    password: password,
+    context: context,
+  );
+
+  if (user != null) {
+    final fullName = await AuthService.getFullName(user.uid);
+    _showMessage("Login successful");
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => GetStartedScreen(fullName: fullName)),
+    );
+  } else {
+    // ما يحتاج تنقله لصفحة التسجيل هنا، بس تعرض له رسالة خطأ
+    _showMessage("Invalid email or password");
+  }
+}
+
+
+  Future<void> _loginWithFingerprint() async {
+    bool canAuthenticate = await _localAuth.canCheckBiometrics;
+    if (!canAuthenticate) {
+      _showMessage("Biometric not available");
+      return;
+    }
+
+    bool authenticated = await _localAuth.authenticate(
+      localizedReason: 'Authenticate to login',
+    );
+
+    if (authenticated) {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user != null) {
+    final fullName = await AuthService.getFullName(user.uid);
+    _showMessage("Fingerprint recognized. Welcome!");
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => GetStartedScreen(fullName: fullName)),
+    );
+  } else {
+    _showMessage("User not found");
+  }
+}
+
+  }
+
+  void _showMessage(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -30,11 +104,13 @@ class LoginScreen extends StatelessWidget {
             ),
             const SizedBox(height: 30),
             _buildTextField(
+              controller: _emailController,
               hint: "Email or Mobile Number",
               icon: Icons.person,
             ),
             const SizedBox(height: 15),
             _buildTextField(
+              controller: _passwordController,
               hint: "Password",
               icon: Icons.lock,
               obscure: true,
@@ -49,9 +125,7 @@ class LoginScreen extends StatelessWidget {
               ),
             ),
             ElevatedButton(
-              onPressed: () {
-                // TODO: login action
-              },
+              onPressed: _login,
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color.fromARGB(255, 197, 168, 221),
                 padding: const EdgeInsets.symmetric(vertical: 14),
@@ -64,22 +138,20 @@ class LoginScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 GestureDetector(
-                  onTap: () => handleGoogleSignIn(context),
-                  child: Icon(Icons.g_mobiledata, size: 36),
-                ),
+                 onTap: () => GoogleSignInHandler.signInWithGoogle(context),
+                  child: const Icon(Icons.g_mobiledata, size: 36),
+                ), 
                 const SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.facebook, size: 30),
                   onPressed: () {
-                    // TODO: Facebook login
+                    AuthService.signInWithFacebook(context);
                   },
                 ),
                 const SizedBox(width: 12),
                 IconButton(
                   icon: const Icon(Icons.fingerprint, size: 30),
-                  onPressed: () {
-                    // TODO: Fingerprint login
-                  },
+                  onPressed: _loginWithFingerprint,
                 ),
               ],
             ),
@@ -96,18 +168,20 @@ class LoginScreen extends StatelessWidget {
                 )
               ],
             ),
-          ],  // <-- هنا تغلق قائمة الـ children بقوس مربع فقط
+          ],
         ),
       ),
     );
   }
 
   static Widget _buildTextField({
+    required TextEditingController controller,
     required String hint,
     required IconData icon,
     bool obscure = false,
   }) {
     return TextField(
+      controller: controller,
       obscureText: obscure,
       decoration: InputDecoration(
         hintText: hint,

@@ -47,7 +47,7 @@ class MunirApp extends StatelessWidget {
       title: 'Munir App',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        fontFamily: 'YourFontName', // غيرها إذا عندك خط
+        fontFamily: 'YourFontName', 
         primarySwatch: Colors.deepPurple,
         scaffoldBackgroundColor: Colors.white,
       ),
