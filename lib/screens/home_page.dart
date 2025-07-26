@@ -1,11 +1,21 @@
 import 'package:flutter/material.dart';
 import './profile.dart';
+import './face_management.dart';
+import './camera.dart';
+import './settings.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  @override
   Widget build(BuildContext context) {
+    const purple = Color(0xFF6B1D73);
+
     return Scaffold(
       body: ListView(
         padding: EdgeInsets.zero,
@@ -15,20 +25,10 @@ class HomePage extends StatelessWidget {
               Container(
                 height: 220,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF6B1D73),
+                  color: purple,
                   borderRadius: BorderRadius.only(
                     bottomLeft: Radius.circular(40),
                   ),
-                ),
-              ),
-              Positioned(
-                top: 40,
-                left: 16,
-                child: GestureDetector(
-                  onTap: () {
-                    // TODO: Navigate to drawer/menu page
-                  },
-                  child: const Icon(Icons.menu, color: Colors.white, size: 28),
                 ),
               ),
               Positioned(
@@ -65,11 +65,7 @@ class HomePage extends StatelessWidget {
               ),
             ],
           ),
-
-          // ✅ المسافة تحت الهيدر
           const SizedBox(height: 16),
-
-          // ✅ قائمة الميزات داخل Column
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -86,45 +82,109 @@ class HomePage extends StatelessWidget {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
-        selectedItemColor: const Color(0xFF6B1D73),
-        unselectedItemColor: Colors.grey,
+        selectedItemColor: Color(0xFFB14ABA),
+        unselectedItemColor: Colors.black,
+        backgroundColor: Colors.white,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
         type: BottomNavigationBarType.fixed,
+        onTap: (index) {
+          if (index == 0) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const HomePage()),
+            );
+          } else if (index == 3) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const SettingsPage()),
+            );
+          }
+        },
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Notifications',
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.warning),
+            icon: Icon(Icons.notifications_none),
+            label: 'Reminders',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.warning_amber_outlined),
             label: 'Emergency',
           ),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Setting'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );
   }
 
   static Widget _buildFeatureCard(String title, {bool highlight = false}) {
-    return Card(
-      color: highlight
-          ? const Color(0xAA6B1D73) // غامق مع شفافية
-          : const Color(0xAAC8B8E4), // فاتح مع شفافية
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      margin: const EdgeInsets.symmetric(vertical: 10), // مسافة بين العناصر
-      child: ListTile(
-        leading: Container(
-          width: 40,
-          height: 40,
-          color: Colors.grey.shade300,
-          child: const Icon(Icons.image, color: Colors.white),
+    String imageName = '';
+    switch (title) {
+      case 'Face Recognition':
+        imageName = 'facerecog.jpg';
+        break;
+      case 'Text Reading':
+        imageName = 'textreading.jpg';
+        break;
+      case 'Alerts / Reminders':
+        imageName = 'reminders.jpg';
+        break;
+      case 'Currency Recognition':
+        imageName = 'currency.jpg';
+        break;
+      case 'Color Identification':
+        imageName = 'color.jpg';
+        break;
+    }
+
+    return Builder(
+      builder: (context) => Card(
+        color: highlight ? const Color(0xAA6B1D73) : const Color(0xAAC8B8E4),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.symmetric(vertical: 10),
+        child: ListTile(
+          leading: Container(
+            width: 50,
+            height: 50,
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: imageName.isNotEmpty
+                ? Image.asset('assets/images/$imageName', fit: BoxFit.contain)
+                : const Icon(Icons.image, color: Colors.white),
+          ),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: const Text('Body copy description'),
+          trailing: const Icon(Icons.arrow_forward_ios),
+          onTap: () {
+            if (title == 'Face Recognition') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const FaceManagementPage(),
+                ),
+              );
+            } else if (title == 'Text Reading' ||
+                title == 'Currency Recognition' ||
+                title == 'Color Identification') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const CameraScreen()),
+              );
+            }
+          },
         ),
-        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: const Text('Body copy description'),
-        trailing: const Icon(Icons.arrow_forward_ios),
-        onTap: () {},
       ),
     );
   }

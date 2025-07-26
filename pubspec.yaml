@@ -57,6 +57,8 @@ dependencies:
   dropdown_search: ^5.0.6
   geolocator: ^11.0.0
   geocoding: ^3.0.0
+  camera: ^0.10.5+9
+
   cloud_firestore: ^4.17.3
 
 dev_dependencies:
