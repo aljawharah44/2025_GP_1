@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'login_screen.dart';
 import 'signup_screen.dart';
-import '../constants/color.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -9,144 +8,76 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.background,
       body: Stack(
+        fit: StackFit.expand,
         children: [
-          _buildTopCurve(),
-          Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                // ✅ عنوان التطبيق
-                const Text(
-                  "MUNIR",
-                  style: TextStyle(
-                    fontSize: 40,
-                    fontWeight: FontWeight.bold,
-                    color: Color.fromARGB(255, 222, 99, 234),
-                    letterSpacing: 2,
-                  ),
+          // 🔲 الخلفية (الصورة)
+          Image.asset(
+            'assets/images/start_background.png',
+            fit: BoxFit.cover,
+          ),
+
+          // 🔲 المحتوى الأمامي: الأزرار والنص
+          Column(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 32.0),
+                child: Column(
+                  children: [
+                    _buildButton(
+                      title: 'Signup',
+                      color: const Color(0xFFB14ABA),
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const SignupScreen()));
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _buildButton(
+                      title: 'LOGIN',
+                      color: const Color(0xFFE4BEEA),
+                      textColor: Colors.white,
+                      onPressed: () {
+                        Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
+                      },
+                    ),
+                  ],
                 ),
-
-                const SizedBox(height: 16),
-
-                // ✅ وصف ترحيبي جديد
-                Text(
-                  "Get started with Munir",
-                  style: TextStyle(fontSize: 18, color: Colors.grey[600]),
-                ),
-
-                const SizedBox(height: 40),
-
-                // ✅ زر Signup
-                _buildButton(
-                  context,
-                  title: "Signup",
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SignupScreen()),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 15),
-
-                // ✅ زر Login
-                _buildButton(
-                  context,
-                  title: "LOGIN",
-                  isFilled: false,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const LoginScreen()),
-                    );
-                  },
-                ),
-
-                const SizedBox(height: 30),
-
-                // ✅ نص تحت الأزرار
-                Text(
+              ),
+              const SizedBox(height: 24),
+              const Padding(
+                padding: EdgeInsets.only(bottom: 16.0),
+                child: Text(
                   "By creating an account, you agree to our\nTerms and Conditions policy",
                   textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: AppColors.lightText),
+                  style: TextStyle(fontSize: 12, color: Colors.black),
                 ),
-              ],
-            ),
+              ),
+            ],
           )
         ],
       ),
     );
   }
 
-  // ✅ شكل الخلفية العلوية المنحنية
-  Widget _buildTopCurve() {
-    return ClipPath(
-      clipper: TopCurveClipper(),
-      child: Container(
-        height: 240,
-        color: const Color.fromARGB(255, 115, 7, 119),
-        child: ClipPath(
-          clipper: InnerCurveClipper(),
-          child: Container(
-            height: 240,
-            color: const Color.fromARGB(255, 234, 204, 246),
-          ),
+  Widget _buildButton({
+    required String title,
+    required VoidCallback onPressed,
+    required Color color,
+    required Color textColor,
+  }) {
+    return SizedBox(
+      width: double.infinity,
+      height: 48,
+      child: ElevatedButton(
+        onPressed: onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: color,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
+        child: Text(title, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold)),
       ),
     );
   }
-
-  // ✅ بناء زر مخصص
-  Widget _buildButton(BuildContext context,
-      {required String title, required VoidCallback onPressed, bool isFilled = true}) {
-    return ElevatedButton(
-      onPressed: onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isFilled
-            ? const Color.fromARGB(255, 110, 3, 122)
-            : AppColors.secondary,
-        foregroundColor: isFilled ? Colors.white : Colors.black,
-        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      ),
-      child: Text(title),
-    );
-  }
-}
-
-// ✅ الشكل الخارجي للمنحنى العلوي
-class TopCurveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 60);
-    path.quadraticBezierTo(
-        size.width / 2, size.height + 40, size.width, size.height - 40);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
-}
-
-// ✅ الشكل الداخلي للمنحنى العلوي
-class InnerCurveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 80);
-    path.quadraticBezierTo(
-        size.width / 2, size.height + 60, size.width, size.height - 60);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(covariant CustomClipper<Path> oldClipper) => false;
 }

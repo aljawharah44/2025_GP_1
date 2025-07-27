@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'home_page.dart';
 
 class GetStartedScreen extends StatelessWidget {
   final String fullName;
@@ -38,8 +39,12 @@ class GetStartedScreen extends StatelessWidget {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        // TODO: حط التنقل للصفحة الجاية هنا
-                      },
+                      Navigator.pushReplacement(
+                       context,
+                       MaterialPageRoute(builder: (context) => HomePage()),
+                        );
+                           },
+
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Color.fromARGB(255, 224, 174, 228), 
                         padding: const EdgeInsets.symmetric(vertical: 16),
