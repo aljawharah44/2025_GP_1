@@ -79,7 +79,7 @@ Widget build(BuildContext context) {
       children: [
         // 🔲 الخلفية صورة
         Image.asset(
-          'assets/images/signup_background.png',
+          'assets/images/backgroundd.png',
           fit: BoxFit.cover,
         ),
 
@@ -91,16 +91,16 @@ Widget build(BuildContext context) {
               key: _formKey,
               child: Column(
                 children: [
-                  const SizedBox(height: 40),
-                  /*const Text(
+                  const SizedBox(height: 10),
+                  const Text(
                     "New Account",
                     style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
-                      color: Color.fromARGB(255, 43, 34, 34), // غيّر حسب وضوح الخلفية
+                      color: Color.fromARGB(255, 251, 251, 251), // غيّر حسب وضوح الخلفية
                     ),
                     textAlign: TextAlign.center,
-                  ),*/
+                  ),
                   const SizedBox(height: 50),
 
                   // باقي الفورم كما هو بدون تغيير:

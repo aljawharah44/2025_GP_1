@@ -5,7 +5,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AuthService {
   static final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  /// تسجيل الدخول بالبريد وكلمة المرور
   static Future<User?> signInWithEmail({
   required String email,
   required String password,
@@ -49,7 +48,6 @@ class AuthService {
 }
 
 
-  /// التحقق من وجود المستخدم عن طريق الإيميل
   static Future<bool> checkIfUserExists(String email) async {
     try {
       final methods = await _auth.fetchSignInMethodsForEmail(email);
@@ -60,20 +58,11 @@ class AuthService {
     }
   }
 
-  /// تسجيل الدخول السريع وإرجاع الحالة
   static Future<bool> signIn(String email, String password, BuildContext context) async {
     final user = await signInWithEmail(email: email, password: password, context: context);
     return user != null;
   }
 
-  /// تسجيل دخول فيسبوك (غير مفعّل حاليًا)
-  static Future<void> signInWithFacebook(BuildContext context) async {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Facebook Sign-in not implemented')),
-    );
-  }
-
-  /// جلب اسم المستخدم من Firestore
   static Future<String> getFullName(String uid) async {
     try {
       DocumentSnapshot doc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
