@@ -1,7 +1,10 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:country_picker/country_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -18,17 +21,152 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   File? _image;
+  String? _profileImageUrl; // To store the Firebase Storage URL
+  bool _isUploading = false; // To show loading state
   final picker = ImagePicker();
+
+  final _auth = FirebaseAuth.instance;
+  final _firestore = FirebaseFirestore.instance;
+  final _storage = FirebaseStorage.instance;
+
+  final TextEditingController _nameController = TextEditingController();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _addressController = TextEditingController();
 
   String? selectedCountryCode;
   String? selectedCountryName;
   String? selectedCity;
-  String? address;
 
   List<String> cities = [];
 
+  @override
+  void initState() {
+    super.initState();
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    print('Loading user data...');
+    final user = _auth.currentUser;
+    if (user != null) {
+      print('User found: ${user.uid}');
+      final doc = await _firestore.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        print('Document exists, loading data...');
+        final data = doc.data();
+        _emailController.text = data?['email'] ?? '';
+        _nameController.text = data?['full_name'] ?? '';
+        _phoneController.text = data?['phone'] ?? '';
+        _addressController.text = data?['address'] ?? '';
+        selectedCountryName = data?['country'];
+        selectedCity = data?['city'];
+        selectedCountryCode = data?['countryCode'];
+        _profileImageUrl = data?['profileImageUrl']; // Load existing image URL
+
+        if (selectedCountryCode != null) {
+          fetchCities(selectedCountryCode!);
+        }
+        print('Data loaded successfully');
+        setState(() {});
+      } else {
+        print('Document does not exist');
+      }
+    } else {
+      print('No user found');
+    }
+  }
+
+  Future<String?> _uploadImageToFirebase(File imageFile) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) return null;
+
+      // Create a reference to Firebase Storage
+      final storageRef = _storage.ref().child('profilePic/${user.uid}.jpg');
+
+      // Upload the file
+      final uploadTask = storageRef.putFile(imageFile);
+
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
+
+      // Get the download URL
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+
+      return downloadUrl;
+    } catch (e) {
+      print('Error uploading image: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to upload image: $e')));
+      return null;
+    }
+  }
+
+  Future<void> _saveProfile() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Confirm Save'),
+        content: Text('Are you sure you want to save changes?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text('Yes'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text('Cancel'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      final user = _auth.currentUser;
+      if (user != null) {
+        // Prepare the data to save
+        Map<String, dynamic> userData = {
+          'email': _emailController.text.trim(),
+          'full_name': _nameController.text.trim(),
+          'phone': _phoneController.text.trim(),
+          'address': _addressController.text.trim(),
+          'country': selectedCountryName,
+          'city': selectedCity,
+          'countryCode': selectedCountryCode,
+        };
+
+        // If there's a new image, upload it first
+        if (_image != null) {
+          setState(() => _isUploading = true);
+
+          final imageUrl = await _uploadImageToFirebase(_image!);
+          if (imageUrl != null) {
+            userData['profileImageUrl'] = imageUrl;
+            _profileImageUrl = imageUrl; // Update local state
+          }
+
+          setState(() => _isUploading = false);
+        }
+
+        // Save all data to Firestore
+        await _firestore.collection('users').doc(user.uid).update(userData);
+
+        setState(() {});
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Your changes have been saved successfully')),
+        );
+      }
+    }
+  }
+
   Future<void> _getImage() async {
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    final pickedFile = await picker.pickImage(
+      source: ImageSource.gallery,
+      imageQuality: 80, // Compress image to reduce upload time
+    );
+
     if (pickedFile != null) {
       setState(() => _image = File(pickedFile.path));
     }
@@ -39,7 +177,6 @@ class _ProfilePageState extends State<ProfilePage> {
     final url = Uri.parse(
       'http://api.geonames.org/searchJSON?country=$countryCode&featureClass=P&maxRows=1000&username=$username',
     );
-
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -49,7 +186,6 @@ class _ProfilePageState extends State<ProfilePage> {
             .map((item) => item['name'].toString())
             .toSet()
             .toList();
-
         setState(() {
           cities = fetchedCities;
         });
@@ -81,20 +217,17 @@ class _ProfilePageState extends State<ProfilePage> {
       Position position = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
       List<Placemark> placemarks = await placemarkFromCoordinates(
         position.latitude,
         position.longitude,
       );
-
       if (placemarks.isNotEmpty) {
         Placemark place = placemarks.first;
-
         setState(() {
           selectedCountryName = place.country;
           selectedCountryCode = place.isoCountryCode;
           selectedCity = place.locality ?? place.subAdministrativeArea;
-          address =
+          _addressController.text =
               "${place.street ?? ''}, ${place.subLocality ?? ''}, ${place.administrativeArea ?? ''}";
         });
 
@@ -107,6 +240,17 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  // Helper method to get the current profile image
+  ImageProvider _getProfileImage() {
+    if (_image != null) {
+      return FileImage(_image!); // Show newly selected image
+    } else if (_profileImageUrl != null && _profileImageUrl!.isNotEmpty) {
+      return NetworkImage(_profileImageUrl!); // Show image from Firebase
+    } else {
+      return const AssetImage('assets/images/profileimg.jpg'); // Default image
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,9 +258,6 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Column(
           children: [
             _buildHeader(),
-
-            // بداية نفس الكود السابق تمامًا...
-            // لا حاجة لإعادة لصق الجزء العلوي لأنك وضعت الكود كاملاً وسليم.
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20.0),
               child: Column(
@@ -124,19 +265,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 children: [
                   const SizedBox(height: 20),
 
-                  // ✅ عنوان Personal Details
                   const Text(
                     "Personal Details",
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 12),
-
-                  _buildTextField(label: "Name"),
-                  _buildTextField(label: "Email Address"),
-                  _buildTextField(label: "Phone Number"),
+                  _buildField("Name", _nameController),
+                  _buildField("Email Address", _emailController),
+                  _buildField("Phone Number", _phoneController),
                   const SizedBox(height: 20),
-
-                  // ✅ عنوان Address Details + زر or Google Map يمين
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
@@ -162,8 +299,6 @@ class _ProfilePageState extends State<ProfilePage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-
-                  // باقي الحقول كما هي بالضبط
                   const Text(
                     "Country",
                     style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
@@ -218,9 +353,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 12),
-
                   const Text(
                     "City",
                     style: TextStyle(fontWeight: FontWeight.w500, fontSize: 16),
@@ -231,6 +364,24 @@ class _ProfilePageState extends State<ProfilePage> {
                     items: cities,
                     selectedItem: selectedCity,
                     enabled: cities.isNotEmpty,
+                    onChanged: (val) => setState(() => selectedCity = val),
+                    dropdownDecoratorProps: DropDownDecoratorProps(
+                      dropdownSearchDecoration: InputDecoration(
+                        hintText: "Please select your City",
+                        hintStyle: TextStyle(
+                          fontSize: 13,
+                          fontStyle: FontStyle.italic,
+                          color: Colors.black.withOpacity(0.5),
+                        ),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                      ),
+                    ),
                     popupProps: PopupProps.bottomSheet(
                       showSearchBox: true,
                       searchFieldProps: TextFieldProps(
@@ -259,32 +410,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       emptyBuilder: (context, _) =>
                           const Center(child: Text("No data found")),
                     ),
-                    dropdownDecoratorProps: DropDownDecoratorProps(
-                      dropdownSearchDecoration: InputDecoration(
-                        hintText: "Please select your City",
-                        hintStyle: TextStyle(
-                          fontSize: 13,
-                          fontStyle: FontStyle.italic,
-                          color: Colors.black.withOpacity(0.5),
-                        ),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 10,
-                        ),
-                      ),
-                    ),
-                    onChanged: (val) => setState(() => selectedCity = val),
                   ),
-
                   const SizedBox(height: 12),
-                  _buildTextField(label: "Address", initialValue: address),
-
+                  _buildField("Address", _addressController),
                   const SizedBox(height: 20),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: _isUploading ? null : _saveProfile,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: const Color(0xFF6B1D73),
                       minimumSize: const Size.fromHeight(48),
@@ -292,10 +423,21 @@ class _ProfilePageState extends State<ProfilePage> {
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
-                    child: const Text(
-                      "Save",
-                      style: TextStyle(color: Colors.white),
-                    ),
+                    child: _isUploading
+                        ? const SizedBox(
+                            height: 20,
+                            width: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                            ),
+                          )
+                        : const Text(
+                            "Save",
+                            style: TextStyle(color: Colors.white),
+                          ),
                   ),
                   const SizedBox(height: 30),
                 ],
@@ -307,7 +449,7 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildTextField({required String label, String? initialValue}) {
+  Widget _buildField(String label, TextEditingController controller) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -317,9 +459,7 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         const SizedBox(height: 4),
         TextField(
-          controller: initialValue != null
-              ? TextEditingController(text: initialValue)
-              : null,
+          controller: controller,
           decoration: InputDecoration(
             hintText: label == "Address" ? "Enter your address" : null,
             hintStyle: TextStyle(
@@ -416,24 +556,38 @@ class _ProfilePageState extends State<ProfilePage> {
               CircleAvatar(
                 radius: 45,
                 backgroundColor: Colors.grey[300],
-                backgroundImage: _image != null
-                    ? FileImage(_image!)
-                    : const AssetImage('assets/images/profileimg.jpg')
-                          as ImageProvider,
+                backgroundImage: _getProfileImage(),
               ),
+              if (_isUploading)
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.black.withOpacity(0.3),
+                    ),
+                    child: const Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                  ),
+                ),
               Positioned(
                 bottom: 0,
                 right: 5,
                 child: GestureDetector(
-                  onTap: _getImage,
+                  onTap: _isUploading ? null : _getImage,
                   child: Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(color: Colors.white, width: 2),
                     ),
-                    child: const CircleAvatar(
+                    child: CircleAvatar(
                       radius: 14,
-                      backgroundColor: Color(0xFF007AFF),
+                      backgroundColor: _isUploading
+                          ? Colors.grey
+                          : const Color(0xFF007AFF),
                       child: Icon(Icons.edit, size: 16, color: Colors.white),
                     ),
                   ),
