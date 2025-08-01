@@ -29,6 +29,7 @@ class WelcomeScreen extends StatelessWidget {
                       title: 'Signup',
                       color: const Color(0xFFB14ABA),
                       textColor: Colors.white,
+                      isPrimary: true,
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const SignupScreen()));
                       },
@@ -38,6 +39,7 @@ class WelcomeScreen extends StatelessWidget {
                       title: 'LOGIN',
                       color: const Color(0xFFE4BEEA),
                       textColor: Colors.white,
+                      isPrimary: false,
                       onPressed: () {
                         Navigator.push(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
                       },
@@ -48,11 +50,6 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 24),
               const Padding(
                 padding: EdgeInsets.only(bottom: 16.0),
-                child: Text(
-                  "By creating an account, you agree to our\nTerms and Conditions policy",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 12, color: Colors.black),
-                ),
               ),
             ],
           )
@@ -66,17 +63,75 @@ class WelcomeScreen extends StatelessWidget {
     required VoidCallback onPressed,
     required Color color,
     required Color textColor,
+    required bool isPrimary,
   }) {
-    return SizedBox(
+    return Container(
       width: double.infinity,
-      height: 48,
-      child: ElevatedButton(
-        onPressed: onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      height: 56,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: isPrimary ? [
+            color,
+            color.withOpacity(0.8),
+          ] : [
+            color,
+            color.withOpacity(0.9),
+          ],
         ),
-        child: Text(title, style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.bold)),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(isPrimary ? 0.4 : 0.25),
+            blurRadius: isPrimary ? 16 : 12,
+            offset: const Offset(0, 6),
+            spreadRadius: 0,
+          ),
+          BoxShadow(
+            color: Colors.white.withOpacity(0.1),
+            blurRadius: 1,
+            offset: const Offset(0, 1),
+            spreadRadius: 0,
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(16),
+          splashColor: Colors.white.withOpacity(0.2),
+          highlightColor: Colors.white.withOpacity(0.1),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                title,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  letterSpacing: 0.5,
+                  shadows: [
+                    Shadow(
+                      color: Colors.black.withOpacity(0.2),
+                      blurRadius: 2,
+                      offset: const Offset(0, 1),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }
