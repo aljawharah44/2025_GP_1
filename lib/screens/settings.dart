@@ -1,8 +1,60 @@
 import 'package:flutter/material.dart';
-import 'home_page.dart'; // ✅ استيراد الصفحة الرئيسية
+import 'package:firebase_auth/firebase_auth.dart';
+import 'home_page.dart';
+import 'accountinfopage.dart';
+import 'DeviceAlertsPage .dart';
+import 'securitydatapage.dart';
+import 'termspoliciespage.dart';
+import 'login_screen.dart'; // Add this import
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
+
+  Future<void> _logout(BuildContext context) async {
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Logout'),
+          content: const Text('Are you sure you want to logout?'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
+              child: const Text('Logout'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      try {
+        await FirebaseAuth.instance.signOut();
+        
+        // Navigate back to login screen and clear all previous routes
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const LoginScreen()),
+          (route) => false,
+        );
+      } catch (e) {
+        print('Logout error: $e');
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to logout. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,9 +73,7 @@ class SettingsPage extends StatelessWidget {
                 'Settings',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
               ),
-              const SizedBox(
-                height: 40,
-              ), // ✅ زيادة المسافة بين العنوان والبطاقات
+              const SizedBox(height: 40),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Column(
@@ -39,16 +89,27 @@ class SettingsPage extends StatelessWidget {
                           subtitle: 'Edit personal info or delete your account',
                           color: purple,
                           borderColor: borderColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const AccountInfoPage()),
+                            );
+                          },
                         ),
                         _buildSettingCard(
                           context,
                           width: cardWidth,
                           icon: Icons.notifications_active,
                           title: 'Device & Alerts',
-                          subtitle:
-                              'Set up device connections and notifications',
+                          subtitle: 'Set up device connections and notifications',
                           color: purple,
                           borderColor: borderColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const DeviceAlertsPage()),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -61,19 +122,30 @@ class SettingsPage extends StatelessWidget {
                           width: cardWidth,
                           icon: Icons.lock,
                           title: 'Security & Data',
-                          subtitle:
-                              'Manage your password and login preferences',
+                          subtitle: 'Manage your password and login preferences',
                           color: purple,
                           borderColor: borderColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const SecurityDataPage()),
+                            );
+                          },
                         ),
                         _buildSettingCard(
                           context,
                           width: cardWidth,
-                          icon: Icons.wb_sunny,
-                          title: 'Terms&Policies',
+                          icon: Icons.description,
+                          title: 'Terms & Policies',
                           subtitle: 'View the app terms and policies',
                           color: purple,
                           borderColor: borderColor,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (context) => const TermsPoliciesPage()),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -89,6 +161,7 @@ class SettingsPage extends StatelessWidget {
                           subtitle: 'Sign out of your account',
                           color: purple,
                           borderColor: borderColor,
+                          onTap: () => _logout(context),
                         ),
                       ],
                     ),
@@ -104,7 +177,7 @@ class SettingsPage extends StatelessWidget {
         currentIndex: 3,
         selectedItemColor: purple,
         unselectedItemColor: Colors.black,
-        backgroundColor: Colors.white, // ✅ لون أبيض
+        backgroundColor: Colors.white,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
         type: BottomNavigationBarType.fixed,
@@ -146,45 +219,47 @@ class SettingsPage extends StatelessWidget {
     required Color color,
     required Color borderColor,
     required double width,
+    VoidCallback? onTap,
   }) {
-    return SizedBox(
-      width: width,
-      height: 160, // ✅ ارتفاع مريح لحجم النص
-      child: Card(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: BorderSide(color: borderColor.withOpacity(0.05)),
-        ),
-        elevation: 2,
-        shadowColor: borderColor.withOpacity(0.2),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              CircleAvatar(
-                backgroundColor: color,
-                child: Icon(icon, color: Colors.white),
-              ),
-              const SizedBox(
-                height: 18,
-              ), // ✅ زيادة المسافة بين الأيقونة والعنوان
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black,
+    return GestureDetector(
+      onTap: onTap,
+      child: SizedBox(
+        width: width,
+        height: 160,
+        child: Card(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: borderColor.withOpacity(0.05)),
+          ),
+          elevation: 2,
+          shadowColor: borderColor.withOpacity(0.2),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CircleAvatar(
+                  backgroundColor: color,
+                  child: Icon(icon, color: Colors.white),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Expanded(
-                child: Text(
-                  subtitle,
-                  style: const TextStyle(fontSize: 11, color: Colors.black54),
+                const SizedBox(height: 18),
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.black,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 4),
+                Expanded(
+                  child: Text(
+                    subtitle,
+                    style: const TextStyle(fontSize: 11, color: Colors.black54),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

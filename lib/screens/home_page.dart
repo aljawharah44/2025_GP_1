@@ -3,6 +3,7 @@ import './profile.dart';
 import './face_management.dart';
 import './camera.dart';
 import './settings.dart';
+import './reminders.dart'; // Import the reminders page
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,6 +95,11 @@ class _HomePageState extends State<HomePage> {
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
             );
+          } else if (index == 1) { // Add navigation to Reminders
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => const RemindersPage()),
+            );
           } else if (index == 3) {
             Navigator.push(
               context,
@@ -173,6 +179,13 @@ class _HomePageState extends State<HomePage> {
                 context,
                 MaterialPageRoute(
                   builder: (context) => const FaceManagementPage(),
+                ),
+              );
+            } else if (title == 'Alerts / Reminders') { // Add this navigation
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const RemindersPage(),
                 ),
               );
             } else if (title == 'Text Reading' ||
