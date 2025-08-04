@@ -12,7 +12,20 @@
           "package_name": "com.example.munir_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "624453793810-q4oqksqupl7ivj8oagsk93cmmjmr2sc8.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.munir_app",
+            "certificate_hash": "0beac2b01e4d1b500cc46dc24888366ed6db27f5"
+          }
+        },
+        {
+          "client_id": "624453793810-evcvoto43rmulmojldoeputsrctuii9d.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBdkD4xNdQZfB-Q0XQQ06mxSWUqykEAn1A"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "624453793810-8gjqj7a7o25o4ratnmuj7pp7033htcf9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
