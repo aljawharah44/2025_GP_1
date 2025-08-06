@@ -241,3 +241,93 @@ class GoogleSignInHandler {
     }
   }
 }
+
+Future<void> checkEmailProviderAndLogin(
+    String email,
+    String password,
+    BuildContext context,
+  ) async {
+  try {
+    final methods =
+        await FirebaseAuth.instance.fetchSignInMethodsForEmail(email);
+
+    if (methods.contains('google.com') && !methods.contains('password')) {
+      // تم تسجيل الحساب عبر Google فقط
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: const [
+                Icon(Icons.info, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    "This email is registered with Google. Please use the Google Sign-In button.",
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.orange,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: const EdgeInsets.all(16),
+          ),
+        );
+      }
+      return;
+    }
+
+    // نكمل تسجيل الدخول عادي
+    await FirebaseAuth.instance.signInWithEmailAndPassword(
+      email: email,
+      password: password,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: const [
+              Icon(Icons.check_circle, color: Colors.white),
+              SizedBox(width: 8),
+              Text("Welcome back!"),
+            ],
+          ),
+          backgroundColor: Colors.green,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
+
+    // TODO: Navigate to your screen
+  } on FirebaseAuthException catch (e) {
+    String error = "Login failed";
+    if (e.code == 'user-not-found') {
+      error = "No user found with this email.";
+    } else if (e.code == 'wrong-password') {
+      error = "Incorrect password.";
+    }
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(child: Text(error)),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
+}

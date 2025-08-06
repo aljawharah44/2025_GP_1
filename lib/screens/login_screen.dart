@@ -566,7 +566,7 @@ class _LoginScreenState extends State<LoginScreen> with TickerProviderStateMixin
                             _buildSocialButton(
                               icon: Icons.g_mobiledata,
                               onTap: _loginWithGoogle,
-                              label: "Google",
+                              label: "log in with Google",
                             ),
                             if (_biometricAvailable)
                               _buildSocialButton(

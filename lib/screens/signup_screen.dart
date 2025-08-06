@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'get_started.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/google_signin_handler.dart'; // Add this import
 
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
@@ -152,14 +153,45 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
     }
   }
 
+  // Add Google sign-in method
+  Future<void> _signUpWithGoogle() async {
+    if (!_agreeToTerms) {
+      _showSnackBar("Please agree to the Terms & Conditions", Colors.red);
+      return;
+    }
+
+    try {
+      setState(() => _isLoading = true);
+      await GoogleSignInHandler.signInWithGoogle(context);
+    } catch (e) {
+      _showSnackBar("Google sign-up failed", Colors.red);
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
   void _showSnackBar(String message, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            Icon(
+              color == Colors.green ? Icons.check_circle : 
+              color == Colors.orange ? Icons.warning : Icons.error,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
         backgroundColor: color,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -459,7 +491,46 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
                           ),
                         ),
 
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 30),
+
+                        // Divider (similar to login screen)
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                color: Colors.white.withOpacity(0.3),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: Text(
+                                "OR",
+                                style: TextStyle(
+                                  color: Colors.white.withOpacity(0.7),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                height: 1,
+                                color: Colors.white.withOpacity(0.3),
+                              ),
+                            ),
+                          ],
+                        ),
+
+                        const SizedBox(height: 30),
+
+                        // Google sign-up button
+                        _buildSocialButton(
+                          icon: Icons.g_mobiledata,
+                          onTap: _signUpWithGoogle,
+                          label: "Sign up with Google",
+                        ),
+
+                        const SizedBox(height: 30),
 
                         // Login link
                         Container(
@@ -615,6 +686,54 @@ class _SignupScreenState extends State<SignupScreen> with TickerProviderStateMix
           fillColor: Colors.white.withOpacity(0.95),
           filled: true,
           contentPadding: const EdgeInsets.all(20),
+        ),
+      ),
+    );
+  }
+
+  // Add social button widget (similar to login screen)
+  Widget _buildSocialButton({
+    required IconData icon,
+    required VoidCallback onTap,
+    required String label,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              color: Colors.white,
+              size: 24,
+            ),
+            const SizedBox(width: 12),
+            Text(
+              label,
+              style: const TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+                fontSize: 16,
+              ),
+            ),
+          ],
         ),
       ),
     );
