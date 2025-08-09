@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import './profile.dart';
 import './settings.dart';
 import './home_page.dart';
+import './sos_screen.dart';
 
 class RemindersPage extends StatefulWidget {
   const RemindersPage({super.key});
@@ -13,9 +13,12 @@ class RemindersPage extends StatefulWidget {
 }
 
 class _RemindersPageState extends State<RemindersPage> {
+  int _selectedHour = 12;
+  int _selectedMinute = 0;
+
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  
+
   List<ReminderItem> reminders = [];
   bool isLoading = true;
 
@@ -23,7 +26,7 @@ class _RemindersPageState extends State<RemindersPage> {
   final TextEditingController _dateController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
   final TextEditingController _noteController = TextEditingController();
-  
+
   String _selectedFrequency = 'One time';
   String _selectedTimeFormat = 'AM';
   String? _editingReminderId;
@@ -103,14 +106,16 @@ class _RemindersPageState extends State<RemindersPage> {
 
       // Add to local list
       setState(() {
-        reminders.add(ReminderItem(
-          id: docRef.id,
-          title: _titleController.text,
-          time: _timeController.text,
-          date: date,
-          note: _noteController.text,
-          frequency: _selectedFrequency,
-        ));
+        reminders.add(
+          ReminderItem(
+            id: docRef.id,
+            title: _titleController.text,
+            time: _timeController.text,
+            date: date,
+            note: _noteController.text,
+            frequency: _selectedFrequency,
+          ),
+        );
         // Sort reminders by date
         reminders.sort((a, b) => a.date.compareTo(b.date));
       });
@@ -232,8 +237,12 @@ class _RemindersPageState extends State<RemindersPage> {
     const lightPurple = Color(0xFFB14ABA);
 
     // Separate today's reminders from others
-    final todayReminders = reminders.where((reminder) => _isToday(reminder.date)).toList();
-    final otherReminders = reminders.where((reminder) => !_isToday(reminder.date)).toList();
+    final todayReminders = reminders
+        .where((reminder) => _isToday(reminder.date))
+        .toList();
+    final otherReminders = reminders
+        .where((reminder) => !_isToday(reminder.date))
+        .toList();
 
     return Scaffold(
       backgroundColor: purple,
@@ -270,7 +279,11 @@ class _RemindersPageState extends State<RemindersPage> {
                 child: Column(
                   children: todayReminders.map((reminder) {
                     final index = reminders.indexOf(reminder);
-                    return _buildFloatingTodayCard(reminder, lightPurple, index);
+                    return _buildFloatingTodayCard(
+                      reminder,
+                      lightPurple,
+                      index,
+                    );
                   }).toList(),
                 ),
               ),
@@ -293,25 +306,29 @@ class _RemindersPageState extends State<RemindersPage> {
                       ),
                     )
                   : reminders.isEmpty
-                      ? _buildEmptyState()
-                      : RefreshIndicator(
-                          onRefresh: _loadReminders,
-                          color: const Color(0xFFB14ABA),
-                          child: ListView.builder(
-                            padding: const EdgeInsets.only(
-                              top: 20,
-                              left: 20,
-                              right: 20,
-                              bottom: 20,
-                            ),
-                            itemCount: otherReminders.length,
-                            itemBuilder: (context, index) {
-                              final reminder = otherReminders[index];
-                              final originalIndex = reminders.indexOf(reminder);
-                              return _buildRegularReminderCard(reminder, lightPurple, originalIndex);
-                            },
-                          ),
+                  ? _buildEmptyState()
+                  : RefreshIndicator(
+                      onRefresh: _loadReminders,
+                      color: const Color(0xFFB14ABA),
+                      child: ListView.builder(
+                        padding: const EdgeInsets.only(
+                          top: 20,
+                          left: 20,
+                          right: 20,
+                          bottom: 20,
                         ),
+                        itemCount: otherReminders.length,
+                        itemBuilder: (context, index) {
+                          final reminder = otherReminders[index];
+                          final originalIndex = reminders.indexOf(reminder);
+                          return _buildRegularReminderCard(
+                            reminder,
+                            lightPurple,
+                            originalIndex,
+                          );
+                        },
+                      ),
+                    ),
             ),
           ),
         ],
@@ -386,9 +403,18 @@ class _RemindersPageState extends State<RemindersPage> {
                 // Spacer for the center button
                 const SizedBox(width: 55),
                 // Emergency
+                // Emergency
                 GestureDetector(
                   onTap: () {
-                    // Handle emergency tap
+                    final user = _auth.currentUser;
+                    final userName = user?.displayName ?? user?.email ?? 'User';
+
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SosScreen(userName: userName),
+                      ),
+                    );
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -411,7 +437,9 @@ class _RemindersPageState extends State<RemindersPage> {
                   onTap: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const SettingsPage()),
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsPage(),
+                      ),
                     );
                   },
                   child: Column(
@@ -474,10 +502,7 @@ class _RemindersPageState extends State<RemindersPage> {
           const SizedBox(height: 10),
           Text(
             'Tap the + button to add your first reminder',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.grey.shade500,
-            ),
+            style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
           ),
         ],
       ),
@@ -486,7 +511,9 @@ class _RemindersPageState extends State<RemindersPage> {
 
   bool _isToday(DateTime date) {
     final now = DateTime.now();
-    return date.year == now.year && date.month == now.month && date.day == now.day;
+    return date.year == now.year &&
+        date.month == now.month &&
+        date.day == now.day;
   }
 
   void _showAddReminderDialog(BuildContext context) {
@@ -505,7 +532,10 @@ class _RemindersPageState extends State<RemindersPage> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(20),
               ),
-              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 40),
+              insetPadding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 40,
+              ),
               child: Container(
                 width: double.infinity,
                 constraints: BoxConstraints(
@@ -522,7 +552,9 @@ class _RemindersPageState extends State<RemindersPage> {
                         children: [
                           const SizedBox(width: 24),
                           Text(
-                            _editingReminderId != null ? "Edit Reminder" : "Add Reminder",
+                            _editingReminderId != null
+                                ? "Edit Reminder"
+                                : "Add Reminder",
                             style: const TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -534,7 +566,10 @@ class _RemindersPageState extends State<RemindersPage> {
                               _clearForm();
                               Navigator.pop(context);
                             },
-                            child: const Icon(Icons.close, color: Color(0xFF6B1D73)),
+                            child: const Icon(
+                              Icons.close,
+                              color: Color(0xFF6B1D73),
+                            ),
                           ),
                         ],
                       ),
@@ -554,7 +589,7 @@ class _RemindersPageState extends State<RemindersPage> {
                             const SizedBox(height: 20),
                             _buildDateField(setDialogState),
                             const SizedBox(height: 20),
-                            _buildTimeField(setDialogState),
+                            _buildImprovedTimeField(setDialogState),
                             const SizedBox(height: 20),
                             _buildFormField(
                               'Note (optional)',
@@ -581,7 +616,224 @@ class _RemindersPageState extends State<RemindersPage> {
     );
   }
 
-  Widget _buildFormField(String label, TextEditingController controller, String hint, {int maxLines = 1}) {
+  void _showTimePickerDialog(BuildContext context, StateSetter setDialogState) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return StatefulBuilder(
+          builder: (context, setTimeDialogState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              title: const Text(
+                'Select Time',
+                style: TextStyle(
+                  color: Color(0xFF6B1D73),
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              content: Container(
+                width: 300,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        // Hour Dropdown
+                        Column(
+                          children: [
+                            const Text(
+                              'Hour',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFB14ABA),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<int>(
+                                value: _selectedHour,
+                                underline: const SizedBox(),
+                                items: List.generate(12, (index) {
+                                  int hour = index == 0 ? 12 : index;
+                                  return DropdownMenuItem(
+                                    value: hour,
+                                    child: Text(
+                                      hour.toString().padLeft(2, '0'),
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                  );
+                                }),
+                                onChanged: (value) {
+                                  setTimeDialogState(() {
+                                    _selectedHour = value!;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        // Minute Dropdown
+                        Column(
+                          children: [
+                            const Text(
+                              'Minute',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFB14ABA),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<int>(
+                                value: _selectedMinute,
+                                underline: const SizedBox(),
+                                items: List.generate(60, (index) {
+                                  return DropdownMenuItem(
+                                    value: index,
+                                    child: Text(
+                                      index.toString().padLeft(2, '0'),
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                  );
+                                }),
+                                onChanged: (value) {
+                                  setTimeDialogState(() {
+                                    _selectedMinute = value!;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        // AM/PM Dropdown
+                        Column(
+                          children: [
+                            const Text(
+                              'Period',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFFB14ABA),
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: Colors.grey.shade300),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: DropdownButton<String>(
+                                value: _selectedTimeFormat,
+                                underline: const SizedBox(),
+                                items: ['AM', 'PM'].map((period) {
+                                  return DropdownMenuItem(
+                                    value: period,
+                                    child: Text(
+                                      period,
+                                      style: const TextStyle(fontSize: 18),
+                                    ),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  setTimeDialogState(() {
+                                    _selectedTimeFormat = value!;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 30),
+                    // Selected time display
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 20,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFB14ABA).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')} $_selectedTimeFormat',
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6B1D73),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    final timeString =
+                        '${_selectedHour.toString().padLeft(2, '0')}:${_selectedMinute.toString().padLeft(2, '0')} $_selectedTimeFormat';
+                    setDialogState(() {
+                      _timeController.text = timeString;
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF6B1D73),
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  child: const Text(
+                    'OK',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  style: TextButton.styleFrom(foregroundColor: Colors.grey),
+                  child: const Text(
+                    'Cancel',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  Widget _buildFormField(
+    String label,
+    TextEditingController controller,
+    String hint, {
+    int maxLines = 1,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -665,7 +917,7 @@ class _RemindersPageState extends State<RemindersPage> {
     );
   }
 
-  Widget _buildTimeField(StateSetter setDialogState) {
+  Widget _buildImprovedTimeField(StateSetter setDialogState) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -678,70 +930,35 @@ class _RemindersPageState extends State<RemindersPage> {
           ),
         ),
         const SizedBox(height: 8),
-        TextField(
-          controller: _timeController,
-          readOnly: true,
-          decoration: InputDecoration(
-            hintText: 'Select time',
-            hintStyle: TextStyle(color: Colors.grey.shade400),
-            border: OutlineInputBorder(
+        GestureDetector(
+          onTap: () {
+            _showTimePickerDialog(context, setDialogState);
+          },
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey.shade300),
               borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
             ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-              borderSide: BorderSide(color: Colors.grey.shade300),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  _timeController.text.isEmpty
+                      ? 'Select time'
+                      : _timeController.text,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: _timeController.text.isEmpty
+                        ? Colors.grey.shade400
+                        : Colors.black,
+                  ),
+                ),
+                const Icon(Icons.access_time, color: Colors.grey),
+              ],
             ),
           ),
-          onTap: () async {
-            final time = await showTimePicker(
-              context: context,
-              initialTime: TimeOfDay.now(),
-            );
-            if (time != null) {
-              setDialogState(() {
-                _timeController.text = time.format(context);
-              });
-            }
-          },
-        ),
-        const SizedBox(height: 10),
-        Row(
-          children: [
-            Row(
-              children: [
-                Checkbox(
-                  value: _selectedTimeFormat == 'AM',
-                  activeColor: const Color(0xFFB14ABA),
-                  onChanged: (value) {
-                    if (value == true) {
-                      setDialogState(() {
-                        _selectedTimeFormat = 'AM';
-                      });
-                    }
-                  },
-                ),
-                const Text('AM'),
-              ],
-            ),
-            const SizedBox(width: 20),
-            Row(
-              children: [
-                Checkbox(
-                  value: _selectedTimeFormat == 'PM',
-                  activeColor: const Color(0xFFB14ABA),
-                  onChanged: (value) {
-                    if (value == true) {
-                      setDialogState(() {
-                        _selectedTimeFormat = 'PM';
-                      });
-                    }
-                  },
-                ),
-                const Text('PM'),
-              ],
-            ),
-          ],
         ),
       ],
     );
@@ -802,15 +1019,12 @@ class _RemindersPageState extends State<RemindersPage> {
               if (_titleController.text.isNotEmpty &&
                   _dateController.text.isNotEmpty &&
                   _timeController.text.isNotEmpty) {
-                
                 // Show loading indicator
                 showDialog(
                   context: context,
                   barrierDismissible: false,
                   builder: (context) => const Center(
-                    child: CircularProgressIndicator(
-                      color: Color(0xFFB14ABA),
-                    ),
+                    child: CircularProgressIndicator(color: Color(0xFFB14ABA)),
                   ),
                 );
 
@@ -819,7 +1033,7 @@ class _RemindersPageState extends State<RemindersPage> {
                 } else {
                   await _saveReminderToFirestore();
                 }
-                
+
                 // Close loading dialog
                 Navigator.pop(context);
                 // Close reminder dialog
@@ -829,8 +1043,9 @@ class _RemindersPageState extends State<RemindersPage> {
                 _showErrorSnackBar('Please fill in all required fields');
               }
             },
-            style: OutlinedButton.styleFrom(
-              side: const BorderSide(color: Color(0xFFB14ABA)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFFB14ABA),
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(25),
               ),
@@ -839,7 +1054,7 @@ class _RemindersPageState extends State<RemindersPage> {
             child: Text(
               _editingReminderId != null ? 'Update' : 'Save',
               style: const TextStyle(
-                color: Color(0xFFB14ABA),
+                color: Colors.white,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -878,32 +1093,48 @@ class _RemindersPageState extends State<RemindersPage> {
     _noteController.clear();
     _selectedFrequency = 'One time';
     _selectedTimeFormat = 'AM';
+    _selectedHour = 12; // Add this line
+    _selectedMinute = 0; // Add this line
     _editingReminderId = null;
   }
 
   void _deleteReminder(int index) {
     final reminder = reminders[index];
-    
+
     // Show confirmation dialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Text('Delete Reminder'),
           content: Text('Are you sure you want to delete "${reminder.title}"?'),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
-            ),
-            TextButton(
+            ElevatedButton(
               onPressed: () async {
                 Navigator.pop(context);
                 await _deleteReminderFromFirestore(reminder.id);
               },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF6B1D73),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
               child: const Text(
                 'Delete',
-                style: TextStyle(color: Colors.red),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(foregroundColor: Colors.grey),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
             ),
           ],
@@ -916,15 +1147,20 @@ class _RemindersPageState extends State<RemindersPage> {
     final reminder = reminders[index];
     _editingReminderId = reminder.id;
     _titleController.text = reminder.title;
-    _dateController.text = '${reminder.date.day}/${reminder.date.month}/${reminder.date.year}';
+    _dateController.text =
+        '${reminder.date.day}/${reminder.date.month}/${reminder.date.year}';
     _timeController.text = reminder.time;
     _noteController.text = reminder.note;
     _selectedFrequency = reminder.frequency;
-    
+
     _showAddReminderDialog(context);
   }
 
-  Widget _buildFloatingTodayCard(ReminderItem reminder, Color lightPurple, int index) {
+  Widget _buildFloatingTodayCard(
+    ReminderItem reminder,
+    Color lightPurple,
+    int index,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -976,10 +1212,7 @@ class _RemindersPageState extends State<RemindersPage> {
                   const SizedBox(height: 8),
                   Text(
                     reminder.note,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -987,9 +1220,17 @@ class _RemindersPageState extends State<RemindersPage> {
                 const SizedBox(height: 16),
                 Row(
                   children: [
-                    _buildFloatingActionButton('Edit', const Color(0xFFB14ABA), () => _editReminder(index)),
+                    _buildFloatingActionButton(
+                      'Edit',
+                      const Color(0xFFB14ABA),
+                      () => _editReminder(index),
+                    ),
                     const SizedBox(width: 12),
-                    _buildFloatingActionButton('Delete', const Color(0xFFB14ABA), () => _deleteReminder(index)),
+                    _buildFloatingActionButton(
+                      'Delete',
+                      const Color(0xFFB14ABA),
+                      () => _deleteReminder(index),
+                    ),
                   ],
                 ),
               ],
@@ -1004,7 +1245,10 @@ class _RemindersPageState extends State<RemindersPage> {
             child: Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
                   decoration: const BoxDecoration(
                     color: Color(0xFF6B1D73),
                     borderRadius: BorderRadius.only(
@@ -1022,7 +1266,10 @@ class _RemindersPageState extends State<RemindersPage> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
                   decoration: const BoxDecoration(
                     color: Color(0xFFB14ABA),
                     borderRadius: BorderRadius.only(
@@ -1058,7 +1305,11 @@ class _RemindersPageState extends State<RemindersPage> {
     );
   }
 
-  Widget _buildFloatingActionButton(String text, Color color, VoidCallback onTap) {
+  Widget _buildFloatingActionButton(
+    String text,
+    Color color,
+    VoidCallback onTap,
+  ) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
@@ -1079,7 +1330,11 @@ class _RemindersPageState extends State<RemindersPage> {
     );
   }
 
-  Widget _buildRegularReminderCard(ReminderItem reminder, Color lightPurple, int index) {
+  Widget _buildRegularReminderCard(
+    ReminderItem reminder,
+    Color lightPurple,
+    int index,
+  ) {
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -1135,9 +1390,17 @@ class _RemindersPageState extends State<RemindersPage> {
             ),
             Column(
               children: [
-                _buildActionButton('Edit', const Color(0xFF6B1D73), () => _editReminder(index)),
+                _buildActionButton(
+                  'Edit',
+                  const Color(0xFF6B1D73),
+                  () => _editReminder(index),
+                ),
                 const SizedBox(height: 8),
-                _buildActionButton('Delete', const Color(0xFF6B1D73), () => _deleteReminder(index)),
+                _buildActionButton(
+                  'Delete',
+                  const Color(0xFF6B1D73),
+                  () => _deleteReminder(index),
+                ),
               ],
             ),
           ],
@@ -1169,8 +1432,18 @@ class _RemindersPageState extends State<RemindersPage> {
 
   String _getMonthName(int month) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return months[month - 1];
   }

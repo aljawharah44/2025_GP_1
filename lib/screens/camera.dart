@@ -23,7 +23,11 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _initCamera() async {
     _cameras = await availableCameras();
     if (_cameras != null && _cameras!.isNotEmpty) {
-      _controller = CameraController(_cameras![0], ResolutionPreset.max);
+      _controller = CameraController(
+        _cameras![0],
+        ResolutionPreset.max,
+        enableAudio: false, // ⬅️ Disable audio to avoid microphone permission
+      );
       await _controller!.initialize();
       if (mounted) setState(() {});
     }
@@ -32,7 +36,11 @@ class _CameraScreenState extends State<CameraScreen> {
   Future<void> _switchCamera() async {
     if (_cameras == null || _cameras!.length < 2) return;
     final newIndex = _controller!.description == _cameras![0] ? 1 : 0;
-    _controller = CameraController(_cameras![newIndex], ResolutionPreset.max);
+    _controller = CameraController(
+      _cameras![newIndex],
+      ResolutionPreset.max,
+      enableAudio: false, // ⬅️ Disable audio for switched camera too
+    );
     await _controller!.initialize();
     if (mounted) setState(() {});
   }

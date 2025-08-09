@@ -5,12 +5,16 @@ import 'accountinfopage.dart';
 import 'DeviceAlertsPage .dart';
 import 'securitydatapage.dart';
 import 'termspoliciespage.dart';
-import 'login_screen.dart'; // Add this import
+import 'login_screen.dart';
+import 'Reminders.dart'; // Add this import
+import 'sos_screen.dart'; // Add this import
 
 class SettingsPage extends StatelessWidget {
   const SettingsPage({super.key});
 
   Future<void> _logout(BuildContext context) async {
+    final Color purple = const Color(0xFFCE7ED6);
+
     // Show confirmation dialog
     final confirmed = await showDialog<bool>(
       context: context,
@@ -19,14 +23,26 @@ class SettingsPage extends StatelessWidget {
           title: const Text('Logout'),
           content: const Text('Are you sure you want to logout?'),
           actions: [
+            // Purple logout button on the left
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.white,
+                backgroundColor: purple,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('Logout'),
+            ),
+            // Cancel button on the right
             TextButton(
               onPressed: () => Navigator.pop(context, false),
               child: const Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: TextButton.styleFrom(foregroundColor: Colors.red),
-              child: const Text('Logout'),
             ),
           ],
         );
@@ -36,7 +52,7 @@ class SettingsPage extends StatelessWidget {
     if (confirmed == true) {
       try {
         await FirebaseAuth.instance.signOut();
-        
+
         // Navigate back to login screen and clear all previous routes
         Navigator.pushAndRemoveUntil(
           context,
@@ -92,7 +108,9 @@ class SettingsPage extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const AccountInfoPage()),
+                              MaterialPageRoute(
+                                builder: (context) => const AccountInfoPage(),
+                              ),
                             );
                           },
                         ),
@@ -101,13 +119,16 @@ class SettingsPage extends StatelessWidget {
                           width: cardWidth,
                           icon: Icons.notifications_active,
                           title: 'Device & Alerts',
-                          subtitle: 'Set up device connections and notifications',
+                          subtitle:
+                              'Set up device connections and notifications',
                           color: purple,
                           borderColor: borderColor,
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const DeviceAlertsPage()),
+                              MaterialPageRoute(
+                                builder: (context) => const DeviceAlertsPage(),
+                              ),
                             );
                           },
                         ),
@@ -122,13 +143,16 @@ class SettingsPage extends StatelessWidget {
                           width: cardWidth,
                           icon: Icons.lock,
                           title: 'Security & Data',
-                          subtitle: 'Manage your password and login preferences',
+                          subtitle:
+                              'Manage your password and login preferences',
                           color: purple,
                           borderColor: borderColor,
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const SecurityDataPage()),
+                              MaterialPageRoute(
+                                builder: (context) => const SecurityDataPage(),
+                              ),
                             );
                           },
                         ),
@@ -143,7 +167,9 @@ class SettingsPage extends StatelessWidget {
                           onTap: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const TermsPoliciesPage()),
+                              MaterialPageRoute(
+                                builder: (context) => const TermsPoliciesPage(),
+                              ),
                             );
                           },
                         ),
@@ -187,7 +213,23 @@ class SettingsPage extends StatelessWidget {
               context,
               MaterialPageRoute(builder: (context) => const HomePage()),
             );
+          } else if (index == 1) {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => const RemindersPage()),
+            );
+          } else if (index == 2) {
+            final user = FirebaseAuth.instance.currentUser;
+            final userName = user?.displayName ?? user?.email ?? 'User';
+
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SosScreen(userName: userName),
+              ),
+            );
           }
+          // Index 3 is current page (Settings), so no navigation needed
         },
         items: const [
           BottomNavigationBarItem(

@@ -5,7 +5,10 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'home_page.dart'; // ← للتنقل لصفحة الهوم
+import 'home_page.dart';
+import 'reminders.dart'; // Add this import
+import 'sos_screen.dart'; // Add this import
+import 'settings.dart'; // Add this import
 
 class FaceManagementPage extends StatefulWidget {
   const FaceManagementPage({super.key});
@@ -22,6 +25,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
   bool _isLoading = true;
   bool _isUploading = false;
   String _searchQuery = '';
+  final _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
@@ -270,13 +274,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
             style: const TextStyle(fontSize: 16),
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(
-                'Cancel',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-              ),
-            ),
+            // Delete button moved to left
             ElevatedButton(
               onPressed: () async {
                 Navigator.of(context).pop(); // Close dialog
@@ -295,6 +293,13 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
+              ),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
               ),
             ),
           ],
@@ -1028,7 +1033,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                                             ),
                                           ),
                                           const SizedBox(width: 8),
-                                          // Delete button (X)
+                                          // Delete button (Trash icon instead of X)
                                           GestureDetector(
                                             onTap: () {
                                               _showDeleteConfirmation(
@@ -1052,7 +1057,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                                                 ),
                                               ),
                                               child: const Icon(
-                                                Icons.close,
+                                                Icons.delete_outline,
                                                 color: Colors.white,
                                                 size: 18,
                                               ),
@@ -1123,7 +1128,12 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                 // Reminders
                 GestureDetector(
                   onTap: () {
-                    // Handle reminders tap
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const RemindersPage(),
+                      ),
+                    );
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1143,10 +1153,17 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                 ),
                 // Spacer for the center button
                 const SizedBox(width: 55),
-                // Emergency
+                // Emergency (SOS)
                 GestureDetector(
                   onTap: () {
-                    // Handle emergency tap
+                    final user = _auth.currentUser;
+                    final userName = user?.displayName ?? user?.email ?? 'User';
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => SosScreen(userName: userName),
+                      ),
+                    );
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -1167,7 +1184,12 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                 // Settings
                 GestureDetector(
                   onTap: () {
-                    // Handle settings tap
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const SettingsPage(),
+                      ),
+                    );
                   },
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
