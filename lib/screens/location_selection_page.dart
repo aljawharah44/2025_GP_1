@@ -1,14 +1,15 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; // Add this for platform channels
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'contact_info_page.dart'; // Add this import
+import 'package:telephony/telephony.dart'; // Updated import - more reliable package
+import 'contact_info_page.dart';
 
 class LocationSelectionPage extends StatefulWidget {
   const LocationSelectionPage({super.key});
@@ -20,8 +21,8 @@ class LocationSelectionPage extends StatefulWidget {
 class _LocationSelectionPageState extends State<LocationSelectionPage>
     with WidgetsBindingObserver {
   
-  // Platform channel for SMS
-  static const platform = MethodChannel('com.example.munir_app/sms');
+  // Telephony instance for SMS - Updated to use reliable package
+  final Telephony _telephony = Telephony.instance;
   
   // Controllers
   final TextEditingController _cityController = TextEditingController();
@@ -38,7 +39,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
   String _locationStatus = 'Tap to get location';
   bool _hasLocationPermission = false;
   double _currentAccuracy = 0.0;
-  bool _isSendingLocation = false; // New: Track SMS sending state
+  bool _isSendingLocation = false;
 
   // User data
   String _userName = 'User';
@@ -62,6 +63,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _initializeSMS();
     _initializeApp();
   }
 
@@ -78,6 +80,15 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
     super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.resumed) {
       _checkInitialPermissions();
+    }
+  }
+
+  // Initialize SMS functionality - Updated for telephony package
+  void _initializeSMS() {
+    try {
+      debugPrint('Telephony SMS initialized successfully');
+    } catch (e) {
+      debugPrint('Error initializing telephony SMS: $e');
     }
   }
 
@@ -188,7 +199,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
     }
   }
 
-  // NEW: Direct SMS sending using platform channel
+  // UPDATED: SMS sending using telephony package (more reliable)
   Future<bool> _sendLocationSMS() async {
     if (_currentLatLng == null || _contacts.isEmpty) {
       _showSnackBar(
@@ -200,14 +211,21 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
       return false;
     }
 
+    // Check SMS permissions first
+    bool? permissionsGranted = await _telephony.requestPhoneAndSmsPermissions;
+    if (permissionsGranted != true) {
+      _showSnackBar('SMS permissions required to send emergency messages', isError: true);
+      return false;
+    }
+
     setState(() {
       _isSendingLocation = true;
     });
 
     try {
-      final String locationText = 'EMERGENCY: My current location: ${_cityController.text}, ${_streetController.text}';
+      final String locationText = '🚨 EMERGENCY: My current location: ${_cityController.text}, ${_streetController.text}';
       final String mapsUrl = 'https://maps.google.com/?q=${_currentLatLng!.latitude},${_currentLatLng!.longitude}';
-      final String messageBody = '$locationText\n\nView on map: $mapsUrl\n\nSent from Emergency Location Tracker - $_userName';
+      final String messageBody = '$locationText\n\n📍 View on map: $mapsUrl\n\nSent from Emergency Location Tracker - $_userName';
 
       int successCount = 0;
       int failCount = 0;
@@ -217,21 +235,28 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
           final String phoneNumber = contact['phone'] ?? '';
           if (phoneNumber.isNotEmpty) {
             // Clean phone number - remove any non-digit characters except +
-            final String cleanPhoneNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+            String cleanPhoneNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
+            
+            // Ensure proper format for Saudi Arabia numbers
+            if (cleanPhoneNumber.startsWith('05')) {
+              cleanPhoneNumber = '+966${cleanPhoneNumber.substring(1)}';
+            } else if (cleanPhoneNumber.startsWith('5') && cleanPhoneNumber.length == 9) {
+              cleanPhoneNumber = '+966$cleanPhoneNumber';
+            }
             
             debugPrint('Sending SMS to ${contact['name']} at $cleanPhoneNumber');
             
-            // Use platform channel to send SMS directly
-            final String result = await platform.invokeMethod('sendSMS', {
-              'phoneNumber': cleanPhoneNumber,
-              'message': messageBody,
-            });
+            // Send SMS using telephony package - reliable method
+            await _telephony.sendSms(
+              to: cleanPhoneNumber,
+              message: messageBody,
+            );
             
-            debugPrint('SMS Result: $result');
+            debugPrint('SMS sent to ${contact['name']}');
             successCount++;
             
-            // Small delay between SMS sends
-            await Future.delayed(const Duration(milliseconds: 500));
+            // Small delay between SMS sends to avoid rate limiting
+            await Future.delayed(const Duration(milliseconds: 1000));
             
           } else {
             failCount++;
@@ -250,13 +275,13 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
       // Show result and return success status
       if (successCount > 0) {
         _showSnackBar(
-          'Emergency location sent to $successCount contact(s)${failCount > 0 ? ' ($failCount failed)' : ''}',
+          '✅ Emergency location sent to $successCount contact(s)${failCount > 0 ? ' ($failCount failed)' : ''}',
           isError: false,
         );
-        return true; // Success
+        return true;
       } else {
-        _showSnackBar('Failed to send location to contacts. Please check SMS permissions.', isError: true);
-        return false; // Failure
+        _showSnackBar('❌ Failed to send location to contacts. Please check SMS permissions and try again.', isError: true);
+        return false;
       }
     } catch (e) {
       setState(() {
@@ -264,11 +289,11 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
       });
       debugPrint('Error in SMS sending: $e');
       _showSnackBar('Error sending location: ${e.toString()}', isError: true);
-      return false; // Failure
+      return false;
     }
   }
 
-  // Modified: Simplified confirmation dialog
+  // UPDATED: Enhanced confirmation dialog with better SMS info
   Future<void> _confirmAndSendLocation() async {
     if (_contacts.isEmpty) {
       _showSnackBar('No contacts found. Add contacts first.', isError: true);
@@ -280,53 +305,119 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
       barrierDismissible: false,
       builder: (BuildContext context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text(
-          'Send Emergency Location',
-          style: TextStyle(
-            color: Color(0xFFB14ABA),
-            fontWeight: FontWeight.bold,
-          ),
+        title: const Row(
+          children: [
+            Icon(Icons.emergency_share, color: Colors.red, size: 24),
+            SizedBox(width: 8),
+            Text(
+              'Send Emergency SMS',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 18,
+              ),
+            ),
+          ],
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              'Send your emergency location to all contacts via SMS?',
+              'This will send an emergency SMS with your location to all your contacts.',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
             ),
             const SizedBox(height: 12),
-            Text(
-              'Location: ${_cityController.text}, ${_streetController.text}',
-              style: const TextStyle(fontSize: 14, color: Colors.grey),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.blue[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.blue[200]!),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.location_on, size: 16, color: Colors.blue),
+                      SizedBox(width: 4),
+                      Text('Location:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                    ],
+                  ),
+                  Text(
+                    '${_cityController.text}, ${_streetController.text}',
+                    style: const TextStyle(fontSize: 12, color: Colors.grey),
+                  ),
+                ],
+              ),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 12),
             const Text(
-              'Contacts:',
+              'Recipients:',
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             const SizedBox(height: 4),
-            SizedBox(
-              height: 100,
+            Container(
+              height: 80,
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.grey[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
               child: ListView.builder(
                 itemCount: _contacts.length > 3 ? 3 : _contacts.length,
                 itemBuilder: (context, index) {
                   final contact = _contacts[index];
                   return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Text(
-                      '• ${contact['name']} (${contact['phone']})',
-                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    padding: const EdgeInsets.symmetric(vertical: 1),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.person, size: 12, color: Colors.grey),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            '${contact['name']} (${contact['phone']})',
+                            style: const TextStyle(fontSize: 11, color: Colors.black87),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 },
               ),
             ),
             if (_contacts.length > 3)
-              Text(
-                '... and ${_contacts.length - 3} more',
-                style: const TextStyle(fontSize: 12, color: Colors.grey),
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '... and ${_contacts.length - 3} more contacts',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey, fontStyle: FontStyle.italic),
+                ),
               ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange[50],
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: Colors.orange[300]!),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.warning_amber, size: 16, color: Colors.orange),
+                  SizedBox(width: 6),
+                  Expanded(
+                    child: Text(
+                      'SMS charges may apply depending on your plan',
+                      style: TextStyle(fontSize: 11, color: Colors.orange),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
         actions: [
@@ -334,15 +425,15 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
             onPressed: () => Navigator.of(context).pop(false),
             child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
           ),
-          ElevatedButton(
+          ElevatedButton.icon(
             onPressed: () => Navigator.of(context).pop(true),
+            icon: const Icon(Icons.send, size: 18),
+            label: const Text('Send Emergency SMS'),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            ),
-            child: const Text(
-              'Send Emergency SMS',
-              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             ),
           ),
         ],
@@ -655,7 +746,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
       SnackBar(
         content: Text(message),
         backgroundColor: isError ? Colors.red : Colors.green,
-        duration: Duration(seconds: isError ? 4 : 2),
+        duration: Duration(seconds: isError ? 4 : 3),
         behavior: SnackBarBehavior.floating,
         margin: const EdgeInsets.all(16),
       ),
@@ -1096,7 +1187,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
                                   const SizedBox(width: 8),
                                   Expanded(
                                     child: Text(
-                                      'Ready to send emergency location to ${_contacts.length} contact(s)',
+                                      'Ready to send emergency SMS to ${_contacts.length} contact(s)',
                                       style: const TextStyle(
                                         color: Color(0xFFB14ABA),
                                         fontSize: 14,
@@ -1222,7 +1313,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
                                               : _isLocationLoaded
                                                   ? (_contacts.isEmpty
                                                       ? 'Add Emergency Contacts'
-                                                      : 'Send Emergency Location')
+                                                      : 'Send Emergency SMS')
                                                   : 'Get Location First',
                                           style: const TextStyle(
                                             fontSize: 16,

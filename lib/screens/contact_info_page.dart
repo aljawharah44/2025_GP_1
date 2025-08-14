@@ -225,6 +225,61 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
     }
   }
 
+  Future<void> _deleteSelectedContacts() async {
+    if (_selectedContacts.isEmpty) return;
+
+    // Show confirmation dialog
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Delete Contacts'),
+        content: Text(
+          'Are you sure you want to delete ${_selectedContacts.length} selected contact${_selectedContacts.length > 1 ? 's' : ''}?',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      final User? user = _auth.currentUser;
+      if (user == null) return;
+
+      // Delete all selected contacts
+      for (final contactId in _selectedContacts) {
+        await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .collection('contacts')
+            .doc(contactId)
+            .delete();
+      }
+
+      setState(() {
+        _selectedContacts.clear();
+        _isSelecting = false;
+      });
+
+      _loadContacts();
+      _showSnackBar('${_selectedContacts.length} contact${_selectedContacts.length > 1 ? 's' : ''} deleted successfully');
+    } catch (e) {
+      debugPrint('Error deleting contacts: $e');
+      _showSnackBar('Error deleting contacts', isError: true);
+    }
+  }
+
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
@@ -267,15 +322,30 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
           onPressed: () => Navigator.of(context).pop(),
           icon: const Icon(Icons.arrow_back, color: Color(0xFFB14ABA)),
         ),
-        title: const Text(
-          'Contact Info',
-          style: TextStyle(
-            color: Color(0xFFB14ABA),
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
+        title: _isSelecting
+            ? Text(
+                '${_selectedContacts.length} selected',
+                style: const TextStyle(
+                  color: Color(0xFFB14ABA),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              )
+            : const Text(
+                'Contact Info',
+                style: TextStyle(
+                  color: Color(0xFFB14ABA),
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
         actions: [
+          if (_isSelecting && _selectedContacts.isNotEmpty)
+            IconButton(
+              onPressed: _deleteSelectedContacts,
+              icon: const Icon(Icons.delete, color: Colors.red),
+              tooltip: 'Delete Selected',
+            ),
           TextButton(
             onPressed: _toggleSelection,
             child: Text(
@@ -357,9 +427,12 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                           return Container(
                             margin: const EdgeInsets.only(bottom: 8),
                             decoration: BoxDecoration(
-                              color: Colors.white,
+                              color: isSelected ? const Color(0xFFB14ABA).withOpacity(0.1) : Colors.white,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.grey[300]!),
+                              border: Border.all(
+                                color: isSelected ? const Color(0xFFB14ABA) : Colors.grey[300]!,
+                                width: isSelected ? 2 : 1,
+                              ),
                             ),
                             child: ListTile(
                               leading: CircleAvatar(
@@ -414,35 +487,69 @@ class _ContactInfoPageState extends State<ContactInfoPage> {
                       ),
           ),
 
-          // Add button
+          // Bottom buttons
           Padding(
             padding: const EdgeInsets.all(16),
-            child: SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _showAddContactDialog,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFB14ABA),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.add, color: Colors.white),
-                    SizedBox(width: 8),
-                    Text(
-                      'Add',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+            child: _isSelecting
+                ? Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: _selectedContacts.isEmpty ? null : _deleteSelectedContacts,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            disabledBackgroundColor: Colors.grey[300],
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.delete,
+                                color: _selectedContacts.isEmpty ? Colors.grey : Colors.white,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Delete (${_selectedContacts.length})',
+                                style: TextStyle(
+                                  color: _selectedContacts.isEmpty ? Colors.grey : Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _showAddContactDialog,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFB14ABA),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(Icons.add, color: Colors.white),
+                          SizedBox(width: 8),
+                          Text(
+                            'Add',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-              ),
-            ),
+                  ),
           ),
         ],
       ),
