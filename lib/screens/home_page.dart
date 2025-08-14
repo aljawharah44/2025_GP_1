@@ -7,6 +7,7 @@ import './camera.dart';
 import './settings.dart';
 import './reminders.dart';
 import './sos_screen.dart';
+import './location_permission_screen.dart'; // <-- Make sure this file exists
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -36,8 +37,6 @@ class _HomePageState extends State<HomePage> {
 
         if (doc.exists) {
           final data = doc.data();
-
-          // Check if essential profile fields are missing
           final bool isIncomplete =
               (data?['full_name']?.toString().trim().isEmpty ?? true) ||
               (data?['phone']?.toString().trim().isEmpty ?? true) ||
@@ -50,7 +49,6 @@ class _HomePageState extends State<HomePage> {
             _isLoading = false;
           });
         } else {
-          // No profile document exists - definitely incomplete
           setState(() {
             _isProfileIncomplete = true;
             _isLoading = false;
@@ -88,15 +86,12 @@ class _HomePageState extends State<HomePage> {
                         bottomLeft: Radius.circular(40),
                       ),
                       image: const DecorationImage(
-                        image: AssetImage(
-                          'assets/images/glass.png',
-                        ), // Replace with your image path
+                        image: AssetImage('assets/images/glass.png'),
                         fit: BoxFit.cover,
                       ),
                     ),
                     child: Container(
                       decoration: BoxDecoration(
-                        // Purple overlay to maintain readability and theme
                         color: purple.withOpacity(0.7),
                         borderRadius: const BorderRadius.only(
                           bottomLeft: Radius.circular(40),
@@ -114,10 +109,7 @@ class _HomePageState extends State<HomePage> {
                           MaterialPageRoute(
                             builder: (context) => const ProfilePage(),
                           ),
-                        ).then((_) {
-                          // Refresh profile check when returning from profile page
-                          _checkProfileCompleteness();
-                        });
+                        ).then((_) => _checkProfileCompleteness());
                       },
                       child: const CircleAvatar(
                         radius: 20,
@@ -141,7 +133,6 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 16),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -158,10 +149,10 @@ class _HomePageState extends State<HomePage> {
             ],
           ),
 
-          // Centered notification for profile completion with grey background overlay
+          // Profile incomplete overlay
           if (!_isLoading && _isProfileIncomplete && !_isDismissed)
             Container(
-              color: Colors.black.withOpacity(0.5), // Grey overlay background
+              color: Colors.black.withOpacity(0.5),
               child: Center(
                 child: AnimatedOpacity(
                   duration: const Duration(milliseconds: 300),
@@ -190,11 +181,8 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(
-                              Icons.account_circle_outlined,
-                              color: Colors.white,
-                              size: 24,
-                            ),
+                            const Icon(Icons.account_circle_outlined,
+                                color: Colors.white, size: 24),
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(
@@ -223,24 +211,17 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             TextButton(
                               onPressed: () {
-                                setState(() {
-                                  _isDismissed = true;
-                                });
+                                setState(() => _isDismissed = true);
                               },
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white70,
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
+                                    horizontal: 16, vertical: 8),
                               ),
-                              child: const Text(
-                                'Later',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
+                              child: const Text('Later',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w500)),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
@@ -250,18 +231,13 @@ class _HomePageState extends State<HomePage> {
                                   MaterialPageRoute(
                                     builder: (context) => const ProfilePage(),
                                   ),
-                                ).then((_) {
-                                  // Refresh profile check when returning from profile page
-                                  _checkProfileCompleteness();
-                                });
+                                ).then((_) => _checkProfileCompleteness());
                               },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF6B1D73),
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 20,
-                                  vertical: 8,
-                                ),
+                                    horizontal: 20, vertical: 8),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -270,9 +246,8 @@ class _HomePageState extends State<HomePage> {
                               child: const Text(
                                 'Complete Now',
                                 style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.bold,
-                                ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold),
                               ),
                             ),
                           ],
@@ -287,13 +262,13 @@ class _HomePageState extends State<HomePage> {
       ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 0,
-        selectedItemColor: Color(0xFFB14ABA),
+        selectedItemColor: const Color(0xFFB14ABA),
         unselectedItemColor: Colors.black,
         backgroundColor: Colors.grey.shade200,
         selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
         unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
         type: BottomNavigationBarType.fixed,
-        onTap: (index) {
+        onTap: (index) async {
           if (index == 0) {
             Navigator.pushReplacement(
               context,
@@ -306,14 +281,42 @@ class _HomePageState extends State<HomePage> {
             );
           } else if (index == 2) {
             final user = _auth.currentUser;
-            final userName = user?.displayName ?? user?.email ?? 'User';
+            if (user != null) {
+              final doc = await _firestore.collection('users').doc(user.uid).get();
+              final data = doc.data();
+              final permissionGranted = data?['location_permission_granted'] ?? false;
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => SosScreen(userName: userName),
-              ),
-            );
+              if (!permissionGranted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => LocationPermissionScreen(
+                      onPermissionGranted: () async {
+                        await _firestore
+                            .collection('users')
+                            .doc(user.uid)
+                            .update({'location_permission_granted': true});
+                        final userName = user.displayName ?? user.email ?? 'User';
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => SosScreen(userName: userName),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                );
+              } else {
+                final userName = user.displayName ?? user.email ?? 'User';
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => SosScreen(userName: userName),
+                  ),
+                );
+              }
+            }
           } else if (index == 3) {
             Navigator.push(
               context,
@@ -323,21 +326,12 @@ class _HomePageState extends State<HomePage> {
         },
         items: const [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
+              icon: Icon(Icons.home_outlined), label: 'Home'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
-            label: 'Reminders',
-          ),
+              icon: Icon(Icons.notifications_none), label: 'Reminders'),
           BottomNavigationBarItem(
-            icon: Icon(Icons.warning_amber_outlined),
-            label: 'Emergency',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+              icon: Icon(Icons.warning_amber_outlined), label: 'Emergency'),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
     );
@@ -391,14 +385,10 @@ class _HomePageState extends State<HomePage> {
                 ? Image.asset('assets/images/$imageName', fit: BoxFit.contain)
                 : const Icon(Icons.image, color: Colors.white),
           ),
-          title: Text(
-            title,
-            style: const TextStyle(fontWeight: FontWeight.bold),
-          ),
-          subtitle: Text(
-            description,
-            style: const TextStyle(fontSize: 13), // Change font size here
-          ), // Now shows unique description for each feature
+          title: Text(title,
+              style: const TextStyle(fontWeight: FontWeight.bold)),
+          subtitle: Text(description,
+              style: const TextStyle(fontSize: 13)),
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () {
             if (title == 'Face Recognition') {

@@ -58,9 +58,12 @@ dependencies:
   geolocator: ^11.0.0
   geocoding: ^3.0.0
   camera: ^0.10.5+9
-
+  google_maps_flutter: ^2.2.3
   cloud_firestore: ^4.17.3
   firebase_storage: ^11.6.7
+  url_launcher: ^6.3.0
+  telephony: ^0.2.0
+
 
 
 dev_dependencies:
