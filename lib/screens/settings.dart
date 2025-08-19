@@ -225,7 +225,7 @@ class SettingsPage extends StatelessWidget {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => SosScreen(userName: userName),
+                builder: (context) => const SosScreen(),  // ✅ no args passed
               ),
             );
           }

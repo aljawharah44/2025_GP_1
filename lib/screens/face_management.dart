@@ -1161,7 +1161,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SosScreen(userName: userName),
+                         builder: (context) => const SosScreen(),  // ✅ no args passed
                       ),
                     );
                   },

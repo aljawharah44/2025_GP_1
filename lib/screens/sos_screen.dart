@@ -1,14 +1,22 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 import 'home_page.dart';
 import 'Reminders.dart';
 import 'settings.dart';
 import 'location_selection_page.dart';
 
-class SosScreen extends StatelessWidget {
-  final String userName;
+class SosScreen extends StatefulWidget {
+  const SosScreen({super.key}); // ✅ removed userName parameter
 
-  const SosScreen({super.key, required this.userName});
+  @override
+  State<SosScreen> createState() => _SosScreenState();
+}
+
+class _SosScreenState extends State<SosScreen> {
+  final user = FirebaseAuth.instance.currentUser;
 
   void _onNavTap(BuildContext context, int index) {
     if (index == 0) {
@@ -22,7 +30,7 @@ class SosScreen extends StatelessWidget {
         MaterialPageRoute(builder: (_) => const RemindersPage()),
       );
     } else if (index == 2) {
-      // Already on SOS screen — do nothing
+      // Already on SOS screen
     } else if (index == 3) {
       Navigator.pushReplacement(
         context,
@@ -36,33 +44,21 @@ class SosScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
 
-      // ✅ Unified BottomNavigationBar with navigation
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: 2,
         selectedItemColor: const Color(0xFFB14ABA),
         unselectedItemColor: Colors.black,
         backgroundColor: Colors.white,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.bold),
-        unselectedLabelStyle: const TextStyle(fontWeight: FontWeight.normal),
         type: BottomNavigationBarType.fixed,
         onTap: (index) => _onNavTap(context, index),
         items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home_outlined),
-            label: 'Home',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.notifications_none),
-            label: 'Reminders',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.notifications_none), label: 'Reminders'),
           BottomNavigationBarItem(
             icon: Icon(Icons.warning_amber_outlined, color: Color(0xFFB14ABA)),
             label: 'Emergency',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.settings),
-            label: 'Settings',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
         ],
       ),
 
@@ -76,30 +72,55 @@ class SosScreen extends StatelessWidget {
               child: Icon(Icons.notifications_none),
             ),
             const SizedBox(height: 10),
-            Text(
-              'Hey!',
-              style: TextStyle(fontSize: 20, color: Colors.grey.shade700),
+
+            // ✅ Firestore StreamBuilder to fetch live user name
+            StreamBuilder<DocumentSnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(user!.uid)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const CircularProgressIndicator();
+                }
+
+                var userData = snapshot.data!.data() as Map<String, dynamic>?;
+
+                String name = "User";
+                if (userData != null && userData.containsKey('full_name')) {
+                  name = userData['full_name'];
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Hey!",
+                      style: TextStyle(fontSize: 20, color: Colors.grey.shade700),
+                    ),
+                    Text(
+                      name,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.purple,
+                      ),
+                    ),
+                  ],
+                );
+              },
             ),
-            Text(
-              userName,
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.purple,
-              ),
-            ),
+
             const SizedBox(height: 30),
 
             const Text(
               'Help is just a click away!',
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
-              textAlign: TextAlign.left,
             ),
             const SizedBox(height: 4),
             const Text(
               'Click SOS button to call the help.',
               style: TextStyle(fontSize: 12, color: Colors.purple),
-              textAlign: TextAlign.left,
             ),
 
             const Spacer(),
@@ -116,7 +137,6 @@ class SosScreen extends StatelessWidget {
       context: context,
       barrierDismissible: false,
       builder: (BuildContext context) {
-        // Auto close after 5 seconds
         Timer(const Duration(seconds: 5), () {
           if (Navigator.canPop(context)) {
             Navigator.of(context).pop();
@@ -169,14 +189,15 @@ class SosScreen extends StatelessWidget {
 
 class SosButton extends StatefulWidget {
   final Function(BuildContext) onLocationSent;
-  
+
   const SosButton({super.key, required this.onLocationSent});
 
   @override
   State<SosButton> createState() => _SosButtonState();
 }
 
-class _SosButtonState extends State<SosButton> with SingleTickerProviderStateMixin {
+class _SosButtonState extends State<SosButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _pulseAnimation;
   bool _isProcessing = false;
@@ -222,18 +243,15 @@ class _SosButtonState extends State<SosButton> with SingleTickerProviderStateMix
     });
 
     try {
-      // Navigate to location selection page and wait for result
       final result = await Navigator.push<bool>(
         context,
         MaterialPageRoute(builder: (_) => const LocationSelectionPage()),
       );
 
-      // If location was successfully sent (result == true)
       if (result == true && mounted) {
         widget.onLocationSent(context);
       }
     } catch (e) {
-      // Handle any errors
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
