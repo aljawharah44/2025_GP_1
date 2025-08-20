@@ -181,8 +181,11 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         Row(
                           children: [
-                            const Icon(Icons.account_circle_outlined,
-                                color: Colors.white, size: 24),
+                            const Icon(
+                              Icons.account_circle_outlined,
+                              color: Colors.white,
+                              size: 24,
+                            ),
                             const SizedBox(width: 12),
                             const Expanded(
                               child: Text(
@@ -216,12 +219,17 @@ class _HomePageState extends State<HomePage> {
                               style: TextButton.styleFrom(
                                 foregroundColor: Colors.white70,
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 16, vertical: 8),
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
                               ),
-                              child: const Text('Later',
-                                  style: TextStyle(
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500)),
+                              child: const Text(
+                                'Later',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
@@ -237,7 +245,9 @@ class _HomePageState extends State<HomePage> {
                                 backgroundColor: Colors.white,
                                 foregroundColor: const Color(0xFF6B1D73),
                                 padding: const EdgeInsets.symmetric(
-                                    horizontal: 20, vertical: 8),
+                                  horizontal: 20,
+                                  vertical: 8,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(20),
                                 ),
@@ -246,8 +256,9 @@ class _HomePageState extends State<HomePage> {
                               child: const Text(
                                 'Complete Now',
                                 style: TextStyle(
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.bold),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ],
@@ -282,9 +293,13 @@ class _HomePageState extends State<HomePage> {
           } else if (index == 2) {
             final user = _auth.currentUser;
             if (user != null) {
-              final doc = await _firestore.collection('users').doc(user.uid).get();
+              final doc = await _firestore
+                  .collection('users')
+                  .doc(user.uid)
+                  .get();
               final data = doc.data();
-              final permissionGranted = data?['location_permission_granted'] ?? false;
+              final permissionGranted =
+                  data?['location_permission_granted'] ?? false;
 
               if (!permissionGranted) {
                 Navigator.push(
@@ -296,11 +311,11 @@ class _HomePageState extends State<HomePage> {
                             .collection('users')
                             .doc(user.uid)
                             .update({'location_permission_granted': true});
-                        final userName = user.displayName ?? user.email ?? 'User';
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                               builder: (context) => const SosScreen(),  // ✅ no args passed
+                            builder: (context) =>
+                                const SosScreen(), // ✅ no args passed
                           ),
                         );
                       },
@@ -308,11 +323,10 @@ class _HomePageState extends State<HomePage> {
                   ),
                 );
               } else {
-                final userName = user.displayName ?? user.email ?? 'User';
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                      builder: (context) => const SosScreen(),  // ✅ no args passed
+                    builder: (context) => const SosScreen(), // ✅ no args passed
                   ),
                 );
               }
@@ -326,12 +340,21 @@ class _HomePageState extends State<HomePage> {
         },
         items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.home_outlined), label: 'Home'),
+            icon: Icon(Icons.home_outlined),
+            label: 'Home',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.notifications_none), label: 'Reminders'),
+            icon: Icon(Icons.notifications_none),
+            label: 'Reminders',
+          ),
           BottomNavigationBarItem(
-              icon: Icon(Icons.warning_amber_outlined), label: 'Emergency'),
-          BottomNavigationBarItem(icon: Icon(Icons.settings), label: 'Settings'),
+            icon: Icon(Icons.warning_amber_outlined),
+            label: 'Emergency',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
         ],
       ),
     );
@@ -385,10 +408,11 @@ class _HomePageState extends State<HomePage> {
                 ? Image.asset('assets/images/$imageName', fit: BoxFit.contain)
                 : const Icon(Icons.image, color: Colors.white),
           ),
-          title: Text(title,
-              style: const TextStyle(fontWeight: FontWeight.bold)),
-          subtitle: Text(description,
-              style: const TextStyle(fontSize: 13)),
+          title: Text(
+            title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
+          subtitle: Text(description, style: const TextStyle(fontSize: 13)),
           trailing: const Icon(Icons.arrow_forward_ios),
           onTap: () {
             if (title == 'Face Recognition') {
