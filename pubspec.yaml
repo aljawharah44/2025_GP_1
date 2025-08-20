@@ -42,18 +42,16 @@ flutter:
 dependencies:
   flutter:
     sdk: flutter
+  cupertino_icons: ^1.0.8
   firebase_core: ^2.30.0
   shared_preferences: ^2.0.15
   firebase_auth: ^4.17.4
   google_sign_in: ^6.1.4
   flutter_facebook_auth: ^6.0.4
   local_auth: ^2.1.7
-  # The following adds the Cupertino Icons font to your application.
-  # Use with the CupertinoIcons class for iOS style icons.
-  cupertino_icons: ^1.0.8
-  image_picker: ^1.0.4  
+  image_picker: ^1.0.4
   country_picker: ^2.0.20
-  http: ^0.13.6
+  http: ^1.1.5
   dropdown_search: ^5.0.6
   geolocator: ^11.0.0
   geocoding: ^3.0.0
@@ -63,8 +61,14 @@ dependencies:
   firebase_storage: ^11.6.7
   url_launcher: ^6.3.0
   telephony: ^0.2.0
-
-
+  audioplayers: ^6.0.0
+  path_provider: ^2.1.1
+  permission_handler: ^11.0.1
+  
+  # Use the individual ML Kit packages instead of the umbrella package
+  # This avoids version conflicts
+  google_mlkit_text_recognition: ^0.13.0  # Keep your existing version
+  google_mlkit_commons: ^0.7.1           # Compatible version
 
 dev_dependencies:
   flutter_test:
