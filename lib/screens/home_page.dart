@@ -300,7 +300,7 @@ class _HomePageState extends State<HomePage> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => SosScreen(userName: userName),
+                               builder: (context) => const SosScreen(),  // ✅ no args passed
                           ),
                         );
                       },
@@ -312,7 +312,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => SosScreen(userName: userName),
+                      builder: (context) => const SosScreen(),  // ✅ no args passed
                   ),
                 );
               }

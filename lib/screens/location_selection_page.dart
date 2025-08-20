@@ -8,7 +8,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'package:telephony/telephony.dart'; // Updated import - more reliable package
+import 'package:telephony/telephony.dart';
 import 'contact_info_page.dart';
 
 class LocationSelectionPage extends StatefulWidget {
@@ -21,7 +21,7 @@ class LocationSelectionPage extends StatefulWidget {
 class _LocationSelectionPageState extends State<LocationSelectionPage>
     with WidgetsBindingObserver {
   
-  // Telephony instance for SMS - Updated to use reliable package
+  // Telephony instance for SMS
   final Telephony _telephony = Telephony.instance;
   
   // Controllers
@@ -41,10 +41,11 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
   double _currentAccuracy = 0.0;
   bool _isSendingLocation = false;
 
-  // User data
+  // User data - Updated to properly handle Firestore updates
   String _userName = 'User';
   bool _isLoadingUserData = true;
   List<Map<String, dynamic>> _contacts = [];
+  StreamSubscription<DocumentSnapshot>? _userDataSubscription;
 
   // Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -70,6 +71,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _userDataSubscription?.cancel(); // Cancel Firestore listener
     _cityController.dispose();
     _streetController.dispose();
     super.dispose();
@@ -83,7 +85,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
     }
   }
 
-  // Initialize SMS functionality - Updated for telephony package
+  // Initialize SMS functionality
   void _initializeSMS() {
     try {
       debugPrint('Telephony SMS initialized successfully');
@@ -108,6 +110,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
     }
   }
 
+  // UPDATED: Enhanced user data loading with real-time Firestore listener - same as SOS screen
   Future<void> _loadUserData() async {
     if (!mounted) return;
     try {
@@ -122,27 +125,77 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
         return;
       }
 
-      final DocumentSnapshot userDoc = await _firestore
+      // Set up real-time listener for user data updates - same as SOS screen
+      _userDataSubscription = _firestore
           .collection('users')
           .doc(user.uid)
-          .get()
-          .timeout(const Duration(seconds: 8));
+          .snapshots()
+          .listen(
+        (DocumentSnapshot userDoc) {
+          if (mounted) {
+            if (userDoc.exists) {
+              final Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
+              setState(() {
+                // Use the same field priority as SOS screen - 'full_name' first
+                _userName = userData?['full_name'] as String? ??
+                    userData?['displayName'] as String? ??
+                    userData?['name'] as String? ??
+                    userData?['firstName'] as String? ??
+                    userData?['fullName'] as String? ??
+                    user.displayName ??
+                    user.email?.split('@')[0] ??
+                    'User';
+                _isLoadingUserData = false;
+              });
+              debugPrint('User name updated from Firestore: $_userName');
+            } else {
+              _setUserNameFromAuth(user);
+            }
+          }
+        },
+        onError: (error) {
+          debugPrint('Firestore user data listener error: $error');
+          if (mounted) {
+            final User? currentUser = _auth.currentUser;
+            if (currentUser != null) {
+              _setUserNameFromAuth(currentUser);
+            } else {
+              setState(() {
+                _userName = 'User';
+                _isLoadingUserData = false;
+              });
+            }
+          }
+        },
+      );
 
-      if (mounted) {
-        if (userDoc.exists) {
+      // Also do an initial fetch with timeout for immediate data
+      try {
+        final DocumentSnapshot userDoc = await _firestore
+            .collection('users')
+            .doc(user.uid)
+            .get()
+            .timeout(const Duration(seconds: 8));
+
+        if (mounted && userDoc.exists) {
           final Map<String, dynamic>? userData = userDoc.data() as Map<String, dynamic>?;
           setState(() {
-            _userName = userData?['displayName'] as String? ??
+            // Use the same field priority as SOS screen - 'full_name' first
+            _userName = userData?['full_name'] as String? ??
+                userData?['displayName'] as String? ??
                 userData?['name'] as String? ??
                 userData?['firstName'] as String? ??
+                userData?['fullName'] as String? ??
                 user.displayName ??
                 user.email?.split('@')[0] ??
                 'User';
             _isLoadingUserData = false;
           });
-        } else {
-          _setUserNameFromAuth(user);
         }
+      } catch (e) {
+        debugPrint('Initial user data fetch timeout/error: $e');
+        // Fallback to auth data if Firestore fails
+        _setUserNameFromAuth(user);
       }
     } catch (e) {
       debugPrint('Load user data error: $e');
@@ -199,7 +252,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
     }
   }
 
-  // UPDATED: SMS sending using telephony package (more reliable)
+  // SMS sending using telephony package
   Future<bool> _sendLocationSMS() async {
     if (_currentLatLng == null || _contacts.isEmpty) {
       _showSnackBar(
@@ -246,7 +299,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
             
             debugPrint('Sending SMS to ${contact['name']} at $cleanPhoneNumber');
             
-            // Send SMS using telephony package - reliable method
+            // Send SMS using telephony package
             await _telephony.sendSms(
               to: cleanPhoneNumber,
               message: messageBody,
@@ -293,7 +346,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
     }
   }
 
-  // UPDATED: Enhanced confirmation dialog with better SMS info
+  // Enhanced confirmation dialog with better SMS info
   Future<void> _confirmAndSendLocation() async {
     if (_contacts.isEmpty) {
       _showSnackBar('No contacts found. Add contacts first.', isError: true);
@@ -870,7 +923,7 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Top section
+          // Top section - UPDATED: Removed emergency icon and made user name purple
           Container(
             width: double.infinity,
             height: 140,
@@ -914,25 +967,14 @@ class _LocationSelectionPageState extends State<LocationSelectionPage>
                                   style: const TextStyle(
                                     fontSize: 20,
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                                    color: Colors.purple, // Same color as SOS screen
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFB14ABA).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: const Icon(
-                        Icons.emergency,
-                        color: Color(0xFFB14ABA),
-                        size: 24,
-                      ),
-                    ),
+                    // REMOVED: Emergency icon container
                   ],
                 ),
               ],

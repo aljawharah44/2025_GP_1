@@ -412,7 +412,7 @@ class _RemindersPageState extends State<RemindersPage> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => SosScreen(userName: userName),
+                         builder: (context) => const SosScreen(),  // ✅ no args passed
                       ),
                     );
                   },
