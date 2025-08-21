@@ -7,7 +7,7 @@ import './camera.dart';
 import './settings.dart';
 import './reminders.dart';
 import './sos_screen.dart';
-import './location_permission_screen.dart'; // <-- Make sure this file exists
+import './location_permission_screen.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,7 +34,6 @@ class _HomePageState extends State<HomePage> {
       final user = _auth.currentUser;
       if (user != null) {
         final doc = await _firestore.collection('users').doc(user.uid).get();
-
         if (doc.exists) {
           final data = doc.data();
           final bool isIncomplete =
@@ -43,7 +42,6 @@ class _HomePageState extends State<HomePage> {
               (data?['address']?.toString().trim().isEmpty ?? true) ||
               (data?['country']?.toString().trim().isEmpty ?? true) ||
               (data?['city']?.toString().trim().isEmpty ?? true);
-
           setState(() {
             _isProfileIncomplete = isIncomplete;
             _isLoading = false;
@@ -70,7 +68,6 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     const purple = Color(0xFF6B1D73);
-
     return Scaffold(
       body: Stack(
         children: [
@@ -148,8 +145,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ],
           ),
-
-          // Profile incomplete overlay
+          // Profile incomplete overlay - FIXED LINE
           if (!_isLoading && _isProfileIncomplete && !_isDismissed)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -300,7 +296,6 @@ class _HomePageState extends State<HomePage> {
               final data = doc.data();
               final permissionGranted =
                   data?['location_permission_granted'] ?? false;
-
               if (!permissionGranted) {
                 Navigator.push(
                   context,
@@ -314,8 +309,7 @@ class _HomePageState extends State<HomePage> {
                         Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                const SosScreen(), // ✅ no args passed
+                            builder: (context) => const SosScreen(),
                           ),
                         );
                       },
@@ -326,7 +320,7 @@ class _HomePageState extends State<HomePage> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const SosScreen(), // ✅ no args passed
+                    builder: (context) => const SosScreen(),
                   ),
                 );
               }
@@ -363,7 +357,6 @@ class _HomePageState extends State<HomePage> {
   static Widget _buildFeatureCard(String title, {bool highlight = false}) {
     String imageName = '';
     String description = '';
-
     switch (title) {
       case 'Face Recognition':
         imageName = 'facerecog.jpg';
@@ -375,7 +368,7 @@ class _HomePageState extends State<HomePage> {
         break;
       case 'Alerts / Reminders':
         imageName = 'reminders.jpg';
-        description = 'Read printed text aloud';
+        description = 'Set and manage your reminders';
         break;
       case 'Currency Recognition':
         imageName = 'currency.jpg';
@@ -427,12 +420,26 @@ class _HomePageState extends State<HomePage> {
                 context,
                 MaterialPageRoute(builder: (context) => const RemindersPage()),
               );
-            } else if (title == 'Text Reading' ||
-                title == 'Currency Recognition' ||
-                title == 'Color Identification') {
+            } else if (title == 'Text Reading') {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const CameraScreen()),
+                MaterialPageRoute(
+                  builder: (context) => const CameraScreen(mode: 'text'),
+                ),
+              );
+            } else if (title == 'Currency Recognition') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CameraScreen(mode: 'text'),
+                ),
+              );
+            } else if (title == 'Color Identification') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CameraScreen(mode: 'color'),
+                ),
               );
             }
           },
