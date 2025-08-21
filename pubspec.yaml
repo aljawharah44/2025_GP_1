@@ -64,6 +64,7 @@ dependencies:
   audioplayers: ^6.0.0
   path_provider: ^2.1.1
   permission_handler: ^11.0.1
+
   
   # Use the individual ML Kit packages instead of the umbrella package
   # This avoids version conflicts
