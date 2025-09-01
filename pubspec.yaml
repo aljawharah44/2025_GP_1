@@ -64,7 +64,16 @@ dependencies:
   audioplayers: ^6.0.0
   path_provider: ^2.1.1
   permission_handler: ^11.0.1
+  image: ^4.1.3
+  # للكشف عن الوجه
+  google_mlkit_face_detection: ^0.10.0
 
+  # للتعامل مع ML/TFLite (استخراج Embeddings)
+  tflite_flutter: ^0.10.4
+
+  # للتخزين (اختياري)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
   
   # Use the individual ML Kit packages instead of the umbrella package
   # This avoids version conflicts
