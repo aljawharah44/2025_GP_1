@@ -13,7 +13,7 @@ import 'dart:ui' as ui;
 
 class CameraScreen extends StatefulWidget {
   final String mode; // 'text' or 'color' - passed from home page
-  
+
   const CameraScreen({super.key, required this.mode});
 
   @override
@@ -84,7 +84,8 @@ class _CameraScreenState extends State<CameraScreen> {
   @override
   void initState() {
     super.initState();
-    _processingMode = widget.mode; // Set the processing mode from the widget parameter
+    _processingMode =
+        widget.mode; // Set the processing mode from the widget parameter
     _initCamera();
   }
 
@@ -155,15 +156,17 @@ class _CameraScreenState extends State<CameraScreen> {
     try {
       final File imageFile = File(imagePath);
       final Uint8List imageBytes = await imageFile.readAsBytes();
-      
+
       // Decode image
       final ui.Image image = await decodeImageFromList(imageBytes);
-      final ByteData? byteData = await image.toByteData(format: ui.ImageByteFormat.rawRgba);
-      
+      final ByteData? byteData = await image.toByteData(
+        format: ui.ImageByteFormat.rawRgba,
+      );
+
       if (byteData == null) return [128, 128, 128]; // Default gray
-      
+
       final Uint8List pixels = byteData.buffer.asUint8List();
-      
+
       // Get center crop (60% of image)
       final int width = image.width;
       final int height = image.height;
@@ -171,26 +174,29 @@ class _CameraScreenState extends State<CameraScreen> {
       final int cropHeight = (height * 0.6).round();
       final int startX = (width - cropWidth) ~/ 2;
       final int startY = (height - cropHeight) ~/ 2;
-      
+
       Map<String, int> colorFrequency = {};
       int totalValidPixels = 0;
-      
+
       // Sample pixels from center crop
-      for (int y = startY; y < startY + cropHeight; y += 3) { // Sample every 3rd pixel for performance
+      for (int y = startY; y < startY + cropHeight; y += 3) {
+        // Sample every 3rd pixel for performance
         for (int x = startX; x < startX + cropWidth; x += 3) {
           final int pixelIndex = (y * width + x) * 4; // RGBA format
-          
+
           if (pixelIndex + 2 < pixels.length) {
             final int r = pixels[pixelIndex];
             final int g = pixels[pixelIndex + 1];
             final int b = pixels[pixelIndex + 2];
-            
+
             // Filter out very dark, very bright, or very desaturated colors
             final double brightness = (r + g + b) / 3.0;
             final int maxRgb = math.max(r, math.max(g, b));
             final int minRgb = math.min(r, math.min(g, b));
-            final double saturation = maxRgb == 0 ? 0 : (maxRgb - minRgb) / maxRgb;
-            
+            final double saturation = maxRgb == 0
+                ? 0
+                : (maxRgb - minRgb) / maxRgb;
+
             if (brightness > 40 && brightness < 245 && saturation > 0.15) {
               final String colorKey = '$r,$g,$b';
               colorFrequency[colorKey] = (colorFrequency[colorKey] ?? 0) + 1;
@@ -199,23 +205,22 @@ class _CameraScreenState extends State<CameraScreen> {
           }
         }
       }
-      
+
       if (colorFrequency.isEmpty) {
         return [128, 128, 128]; // Default gray if no valid colors found
       }
-      
+
       // Find the most frequent color
       String mostFrequentColor = colorFrequency.entries
           .reduce((a, b) => a.value > b.value ? a : b)
           .key;
-      
+
       List<String> rgbStrings = mostFrequentColor.split(',');
       return [
         int.parse(rgbStrings[0]),
         int.parse(rgbStrings[1]),
-        int.parse(rgbStrings[2])
+        int.parse(rgbStrings[2]),
       ];
-      
     } catch (e) {
       print('Color detection error: $e');
       return [128, 128, 128]; // Default gray on error
@@ -282,7 +287,7 @@ class _CameraScreenState extends State<CameraScreen> {
       }
 
       String textToSpeak = "";
-      
+
       // STRICT MODE SEPARATION - only process what was selected from home page
       if (_processingMode == 'text') {
         // ONLY extract text, ignore color completely
@@ -291,14 +296,14 @@ class _CameraScreenState extends State<CameraScreen> {
           _extractedText = extractedText;
           _detectedColor = ""; // Clear color info
         });
-        
+
         if (extractedText.trim().isNotEmpty) {
           textToSpeak = extractedText;
         } else {
           textToSpeak = "No text detected in the image";
         }
       } else if (_processingMode == 'color') {
-        // ONLY detect color, ignore text completely  
+        // ONLY detect color, ignore text completely
         String detectedColor = await _detectColorFromImage(imagePath);
         setState(() {
           _detectedColor = detectedColor;
@@ -323,7 +328,7 @@ class _CameraScreenState extends State<CameraScreen> {
           await _player.play(DeviceFileSource(audioPath));
 
           if (mounted) {
-            String successMessage = _processingMode == 'color' 
+            String successMessage = _processingMode == 'color'
                 ? 'Color detected and playing audio!'
                 : 'Text extracted and playing audio!';
             ScaffoldMessenger.of(context).showSnackBar(
@@ -349,10 +354,7 @@ class _CameraScreenState extends State<CameraScreen> {
               ? 'Could not detect color in the image!'
               : 'No text detected in the image!';
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(errorMessage),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(errorMessage), backgroundColor: Colors.red),
           );
         }
       }
@@ -395,9 +397,9 @@ class _CameraScreenState extends State<CameraScreen> {
   String get _getModeDescription {
     switch (_processingMode) {
       case 'text':
-        return 'Text Reading Mode - Only reads text from images';
+        return 'Text Reading Mode';
       case 'color':
-        return 'Color Detection Mode - Only identifies dominant color';
+        return 'Color Detection Mode';
       default:
         return 'Unknown mode';
     }
@@ -481,11 +483,7 @@ class _CameraScreenState extends State<CameraScreen> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(
-                          _getModeIcon,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                        Icon(_getModeIcon, color: Colors.white, size: 16),
                         SizedBox(width: 8),
                         Expanded(
                           child: Text(
@@ -527,7 +525,10 @@ class _CameraScreenState extends State<CameraScreen> {
                             SizedBox(width: 4),
                             Text(
                               'New Photo',
-                              style: TextStyle(color: Colors.white, fontSize: 12),
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                              ),
                             ),
                           ],
                         ),
@@ -536,7 +537,7 @@ class _CameraScreenState extends State<CameraScreen> {
                   ),
 
                 // Results display - only show relevant result based on mode
-                if ((_processingMode == 'text' && _extractedText.isNotEmpty) || 
+                if ((_processingMode == 'text' && _extractedText.isNotEmpty) ||
                     (_processingMode == 'color' && _detectedColor.isNotEmpty))
                   Positioned(
                     top: 140,
@@ -551,7 +552,8 @@ class _CameraScreenState extends State<CameraScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          if (_processingMode == 'text' && _extractedText.isNotEmpty) ...[
+                          if (_processingMode == 'text' &&
+                              _extractedText.isNotEmpty) ...[
                             Text(
                               'Extracted Text:',
                               style: TextStyle(
@@ -571,7 +573,8 @@ class _CameraScreenState extends State<CameraScreen> {
                               overflow: TextOverflow.ellipsis,
                             ),
                           ],
-                          if (_processingMode == 'color' && _detectedColor.isNotEmpty) ...[
+                          if (_processingMode == 'color' &&
+                              _detectedColor.isNotEmpty) ...[
                             Text(
                               'Detected Color:',
                               style: TextStyle(

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import './profile.dart';
-import './face_management.dart';
+import './face_list.dart';
 import './camera.dart';
 import './settings.dart';
 import './reminders.dart';
@@ -319,9 +319,7 @@ class _HomePageState extends State<HomePage> {
               } else {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                    builder: (context) => const SosScreen(),
-                  ),
+                  MaterialPageRoute(builder: (context) => const SosScreen()),
                 );
               }
             }
@@ -412,7 +410,8 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const FaceManagementPage(),
+                  builder: (context) =>
+                      const FaceListPage(), // Changed from FaceManagementPage to FaceListPage
                 ),
               );
             } else if (title == 'Alerts / Reminders') {
