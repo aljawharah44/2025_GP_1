@@ -54,7 +54,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
     final inputImage = InputImage.fromFile(imageFile);
     final faces = await faceDetector.processImage(inputImage);
     faceDetector.close();
-    
+
     if (faces.isNotEmpty) {
       return faces.first.boundingBox;
     }
@@ -66,7 +66,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
     try {
       final rawImage = img.decodeImage(await imageFile.readAsBytes());
       if (rawImage == null) return null;
-      
+
       final faceCrop = img.copyCrop(
         rawImage,
         x: rect.left.toInt(),
@@ -74,7 +74,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
         width: rect.width.toInt(),
         height: rect.height.toInt(),
       );
-      
+
       final croppedFile = File('${imageFile.path}_face.jpg')
         ..writeAsBytesSync(img.encodeJpg(faceCrop));
       return croppedFile;
@@ -108,9 +108,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
     } catch (e) {
       setState(() => _isLoading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading people: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error loading people: $e')));
       }
     }
   }
@@ -119,24 +119,24 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
     final picked = await ImagePicker().pickImage(source: ImageSource.gallery);
     if (picked != null) {
       final imageFile = File(picked.path);
-      
+
       setState(() {
         _isDetectingFace = true;
         _selectedImage = imageFile;
         _croppedFaceImage = null;
       });
-      
+
       try {
         final faceRect = await detectFace(imageFile);
-        
+
         if (faceRect != null) {
           final croppedFace = await cropFace(imageFile, faceRect);
-          
+
           setState(() {
             _croppedFaceImage = croppedFace;
             _isDetectingFace = false;
           });
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -148,11 +148,13 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
           }
         } else {
           setState(() => _isDetectingFace = false);
-          
+
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
-                content: Text('No face detected in this image. Please choose a clear face photo.'),
+                content: Text(
+                  'No face detected in this image. Please choose a clear face photo.',
+                ),
                 backgroundColor: Colors.orange,
                 duration: Duration(seconds: 3),
               ),
@@ -190,7 +192,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
 
     try {
       final imageToUpload = _croppedFaceImage ?? _selectedImage!;
-      
+
       final storageRef = FirebaseStorage.instance
           .ref()
           .child('users')
@@ -221,18 +223,20 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
         _resetForm();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(_croppedFaceImage != null 
-              ? 'Person added successfully with face detection!' 
-              : 'Person added successfully (no face detected)'),
+            content: Text(
+              _croppedFaceImage != null
+                  ? 'Person added successfully with face detection!'
+                  : 'Person added successfully (no face detected)',
+            ),
           ),
         );
       }
     } catch (e) {
       setState(() => _isUploading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error adding person: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error adding person: $e')));
       }
     }
   }
@@ -247,7 +251,11 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
     });
   }
 
-  Future<void> _deletePerson(String personId, String personName, String? photoUrl) async {
+  Future<void> _deletePerson(
+    String personId,
+    String personName,
+    String? photoUrl,
+  ) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -276,14 +284,19 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting person: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error deleting person: $e')));
       }
     }
   }
 
-  Future<void> _updatePerson(String personId, String newName, File? newImage, String? oldPhotoUrl) async {
+  Future<void> _updatePerson(
+    String personId,
+    String newName,
+    File? newImage,
+    String? oldPhotoUrl,
+  ) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
@@ -296,7 +309,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
       if (newImage != null) {
         final imageToUpload = _croppedFaceImage ?? newImage;
         faceDetected = _croppedFaceImage != null;
-        
+
         if (oldPhotoUrl != null && oldPhotoUrl.isNotEmpty) {
           try {
             await FirebaseStorage.instance.refFromURL(oldPhotoUrl).delete();
@@ -321,7 +334,7 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
       if (photoUrl != null) {
         updateData['photoUrl'] = photoUrl;
       }
-      
+
       if (faceDetected != null) {
         updateData['faceDetected'] = faceDetected;
       }
@@ -340,32 +353,49 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
         _resetForm();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(faceDetected == true 
-              ? 'Person updated successfully with face detection!' 
-              : faceDetected == false
-              ? 'Person updated successfully (no face detected in new photo)'
-              : 'Person updated successfully!'),
+            content: Text(
+              faceDetected == true
+                  ? 'Person updated successfully with face detection!'
+                  : faceDetected == false
+                  ? 'Person updated successfully (no face detected in new photo)'
+                  : 'Person updated successfully!',
+            ),
           ),
         );
       }
     } catch (e) {
       setState(() => _isUploading = false);
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error updating person: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Error updating person: $e')));
       }
     }
   }
 
-  void _showDeleteConfirmation(String personId, String personName, String? photoUrl) {
+  void _showDeleteConfirmation(
+    String personId,
+    String personName,
+    String? photoUrl,
+  ) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Text('Delete Person', style: TextStyle(color: Color(0xFF6B1D73), fontWeight: FontWeight.bold)),
-          content: Text('Are you sure you want to delete "$personName"?', style: const TextStyle(fontSize: 16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          title: const Text(
+            'Delete Person',
+            style: TextStyle(
+              color: Color(0xFF6B1D73),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          content: Text(
+            'Are you sure you want to delete "$personName"?',
+            style: const TextStyle(fontSize: 16),
+          ),
           actions: [
             ElevatedButton(
               onPressed: () async {
@@ -374,13 +404,25 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF6B1D73),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
               ),
-              child: const Text('Delete', style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Delete',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontSize: 16)),
+              child: const Text(
+                'Cancel',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
             ),
           ],
         );
@@ -390,7 +432,12 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
 
   List<Map<String, dynamic>> get _filteredPeople {
     if (_searchQuery.isEmpty) return _people;
-    return _people.where((person) => person['name'].toLowerCase().contains(_searchQuery.toLowerCase())).toList();
+    return _people
+        .where(
+          (person) =>
+              person['name'].toLowerCase().contains(_searchQuery.toLowerCase()),
+        )
+        .toList();
   }
 
   @override
@@ -407,11 +454,25 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
               child: Column(
                 children: [
                   Container(
-                    padding: const EdgeInsets.only(top: 40, left: 16, right: 16, bottom: 30),
+                    padding: const EdgeInsets.only(
+                      top: 40,
+                      left: 16,
+                      right: 16,
+                      bottom: 30,
+                    ),
                     decoration: BoxDecoration(
                       color: const Color.fromARGB(74, 243, 210, 247),
-                      borderRadius: const BorderRadius.only(bottomLeft: Radius.circular(65), bottomRight: Radius.circular(65)),
-                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), offset: const Offset(0, 3), blurRadius: 8)],
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(65),
+                        bottomRight: Radius.circular(65),
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.05),
+                          offset: const Offset(0, 3),
+                          blurRadius: 8,
+                        ),
+                      ],
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -421,13 +482,25 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                           child: Stack(
                             alignment: Alignment.center,
                             children: [
-                              const Center(child: Text('Face Management', style: TextStyle(color: Color(0xFFB14ABA), fontSize: 20, fontWeight: FontWeight.bold))),
+                              const Center(
+                                child: Text(
+                                  'Face Management',
+                                  style: TextStyle(
+                                    color: Color(0xFFB14ABA),
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
                               Positioned(
                                 left: 0,
                                 top: 0,
                                 child: GestureDetector(
                                   onTap: () => Navigator.pop(context),
-                                  child: const Icon(Icons.arrow_back_ios, color: Color(0xFFB14ABA)),
+                                  child: const Icon(
+                                    Icons.arrow_back_ios,
+                                    color: Color(0xFFB14ABA),
+                                  ),
                                 ),
                               ),
                             ],
@@ -438,23 +511,37 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                           child: Container(
                             width: MediaQuery.of(context).size.width * 0.85,
                             height: 35,
-                            decoration: BoxDecoration(color: const Color(0x38B14ABA), borderRadius: BorderRadius.circular(30)),
+                            decoration: BoxDecoration(
+                              color: const Color(0x38B14ABA),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             child: Row(
                               children: [
-                                const Icon(Icons.search, color: Color(0xFFB14ABA), size: 25),
+                                const Icon(
+                                  Icons.search,
+                                  color: Color(0xFFB14ABA),
+                                  size: 25,
+                                ),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: TextField(
                                     controller: _searchController,
-                                    onChanged: (value) => setState(() => _searchQuery = value),
+                                    onChanged: (value) =>
+                                        setState(() => _searchQuery = value),
                                     decoration: const InputDecoration(
                                       hintText: "Search",
                                       border: InputBorder.none,
-                                      hintStyle: TextStyle(color: Color(0xFFB14ABA)),
-                                      contentPadding: EdgeInsets.only(bottom: 10),
+                                      hintStyle: TextStyle(
+                                        color: Color(0xFFB14ABA),
+                                      ),
+                                      contentPadding: EdgeInsets.only(
+                                        bottom: 10,
+                                      ),
                                     ),
-                                    style: const TextStyle(color: Color(0xFFB14ABA)),
+                                    style: const TextStyle(
+                                      color: Color(0xFFB14ABA),
+                                    ),
                                   ),
                                 ),
                               ],
@@ -466,119 +553,220 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                   ),
                   const SizedBox(height: 23),
                   _isLoading
-                      ? const Padding(padding: EdgeInsets.all(50.0), child: CircularProgressIndicator(color: Color(0xFFB14ABA)))
+                      ? const Padding(
+                          padding: EdgeInsets.all(50.0),
+                          child: CircularProgressIndicator(
+                            color: Color(0xFFB14ABA),
+                          ),
+                        )
                       : _filteredPeople.isEmpty && _searchQuery.isNotEmpty
-                          ? Center(
-                              child: Padding(
-                                padding: const EdgeInsets.all(40.0),
-                                child: Column(
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: Column(
+                              children: [
+                                Icon(
+                                  Icons.search_off,
+                                  size: 40,
+                                  color: Colors.grey.withOpacity(0.6),
+                                ),
+                                const SizedBox(height: 15),
+                                const Text(
+                                  "No people found matching your search",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : _people.isEmpty
+                      ? Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(40.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.person_add_outlined,
+                                  size: 40,
+                                  color: const Color(
+                                    0xFFB14ABA,
+                                  ).withOpacity(0.6),
+                                ),
+                                const SizedBox(height: 15),
+                                const Text(
+                                  "You haven't added people yet",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
+                          ),
+                        )
+                      : Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          child: Column(
+                            children: _filteredPeople.map((person) {
+                              final faceDetected =
+                                  person['faceDetected'] ?? false;
+                              return Container(
+                                margin: const EdgeInsets.only(bottom: 20),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [
+                                      Color(0xFF640B6D),
+                                      Color(0xFFCEA5D2),
+                                    ],
+                                    begin: Alignment.topCenter,
+                                    end: Alignment.bottomCenter,
+                                  ),
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                child: Stack(
                                   children: [
-                                    Icon(Icons.search_off, size: 40, color: Colors.grey.withOpacity(0.6)),
-                                    const SizedBox(height: 15),
-                                    const Text("No people found matching your search", style: TextStyle(fontSize: 16, color: Colors.grey), textAlign: TextAlign.center),
+                                    ListTile(
+                                      contentPadding: const EdgeInsets.all(16),
+                                      leading: Stack(
+                                        children: [
+                                          CircleAvatar(
+                                            radius: 30,
+                                            backgroundColor: Colors.white,
+                                            backgroundImage:
+                                                person['photoUrl'] != null
+                                                ? NetworkImage(
+                                                    person['photoUrl'],
+                                                  )
+                                                : null,
+                                            child: person['photoUrl'] == null
+                                                ? const Icon(
+                                                    Icons.person,
+                                                    color: Colors.grey,
+                                                  )
+                                                : null,
+                                          ),
+                                          Positioned(
+                                            bottom: 0,
+                                            right: 0,
+                                            child: Container(
+                                              width: 18,
+                                              height: 18,
+                                              decoration: BoxDecoration(
+                                                color: faceDetected
+                                                    ? Colors.green
+                                                    : Colors.orange,
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.white,
+                                                  width: 2,
+                                                ),
+                                              ),
+                                              child: Icon(
+                                                faceDetected
+                                                    ? Icons.face
+                                                    : Icons.warning,
+                                                color: Colors.white,
+                                                size: 10,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      title: Text(
+                                        person['name'] ?? 'Unknown',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      subtitle: Text(
+                                        faceDetected
+                                            ? 'Face Detected'
+                                            : 'No Face Detected',
+                                        style: TextStyle(
+                                          color: Colors.white.withOpacity(0.8),
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                      onTap: () {},
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          GestureDetector(
+                                            onTap: () => _showEditDialog(
+                                              person['id'],
+                                              person['name'] ?? 'Unknown',
+                                              person['photoUrl'],
+                                            ),
+                                            child: Container(
+                                              width: 30,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(
+                                                  0.2,
+                                                ),
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.white
+                                                      .withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: const Icon(
+                                                Icons.edit,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 8),
+                                          GestureDetector(
+                                            onTap: () =>
+                                                _showDeleteConfirmation(
+                                                  person['id'],
+                                                  person['name'] ?? 'Unknown',
+                                                  person['photoUrl'],
+                                                ),
+                                            child: Container(
+                                              width: 30,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                color: Colors.white.withOpacity(
+                                                  0.2,
+                                                ),
+                                                shape: BoxShape.circle,
+                                                border: Border.all(
+                                                  color: Colors.white
+                                                      .withOpacity(0.3),
+                                                  width: 1,
+                                                ),
+                                              ),
+                                              child: const Icon(
+                                                Icons.delete_outline,
+                                                color: Colors.white,
+                                                size: 18,
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
                                   ],
                                 ),
-                              ),
-                            )
-                          : _people.isEmpty
-                              ? Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(40.0),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      children: [
-                                        Icon(Icons.person_add_outlined, size: 40, color: const Color(0xFFB14ABA).withOpacity(0.6)),
-                                        const SizedBox(height: 15),
-                                        const Text("You haven't added people yet", style: TextStyle(fontSize: 16, color: Colors.grey), textAlign: TextAlign.center),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                                  child: Column(
-                                    children: _filteredPeople.map((person) {
-                                      final faceDetected = person['faceDetected'] ?? false;
-                                      return Container(
-                                        margin: const EdgeInsets.only(bottom: 20),
-                                        decoration: BoxDecoration(
-                                          gradient: const LinearGradient(colors: [Color(0xFF640B6D), Color(0xFFCEA5D2)], begin: Alignment.topCenter, end: Alignment.bottomCenter),
-                                          borderRadius: BorderRadius.circular(20),
-                                        ),
-                                        child: Stack(
-                                          children: [
-                                            ListTile(
-                                              contentPadding: const EdgeInsets.all(16),
-                                              leading: Stack(
-                                                children: [
-                                                  CircleAvatar(
-                                                    radius: 30,
-                                                    backgroundColor: Colors.white,
-                                                    backgroundImage: person['photoUrl'] != null ? NetworkImage(person['photoUrl']) : null,
-                                                    child: person['photoUrl'] == null ? const Icon(Icons.person, color: Colors.grey) : null,
-                                                  ),
-                                                  Positioned(
-                                                    bottom: 0,
-                                                    right: 0,
-                                                    child: Container(
-                                                      width: 18,
-                                                      height: 18,
-                                                      decoration: BoxDecoration(
-                                                        color: faceDetected ? Colors.green : Colors.orange,
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.white, width: 2),
-                                                      ),
-                                                      child: Icon(faceDetected ? Icons.face : Icons.warning, color: Colors.white, size: 10),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                              title: Text(person['name'] ?? 'Unknown', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-                                              subtitle: Text(faceDetected ? 'Face Detected' : 'No Face Detected', style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 12)),
-                                              onTap: () {},
-                                            ),
-                                            Positioned(
-                                              top: 8,
-                                              right: 8,
-                                              child: Row(
-                                                mainAxisSize: MainAxisSize.min,
-                                                children: [
-                                                  GestureDetector(
-                                                    onTap: () => _showEditDialog(person['id'], person['name'] ?? 'Unknown', person['photoUrl']),
-                                                    child: Container(
-                                                      width: 30,
-                                                      height: 30,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white.withOpacity(0.2),
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                                                      ),
-                                                      child: const Icon(Icons.edit, color: Colors.white, size: 18),
-                                                    ),
-                                                  ),
-                                                  const SizedBox(width: 8),
-                                                  GestureDetector(
-                                                    onTap: () => _showDeleteConfirmation(person['id'], person['name'] ?? 'Unknown', person['photoUrl']),
-                                                    child: Container(
-                                                      width: 30,
-                                                      height: 30,
-                                                      decoration: BoxDecoration(
-                                                        color: Colors.white.withOpacity(0.2),
-                                                        shape: BoxShape.circle,
-                                                        border: Border.all(color: Colors.white.withOpacity(0.3), width: 1),
-                                                      ),
-                                                      child: const Icon(Icons.delete_outline, color: Colors.white, size: 18),
-                                                    ),
-                                                  ),
-                                                ],
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    }).toList(),
-                                  ),
-                                ),
+                              );
+                            }).toList(),
+                          ),
+                        ),
                   const SizedBox(height: 80),
                 ],
               ),
@@ -593,53 +781,103 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
             height: 80,
             decoration: BoxDecoration(
               color: Colors.grey.shade200,
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, -2))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 10,
+                  offset: const Offset(0, -2),
+                ),
+              ],
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const HomePage())),
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const HomePage()),
+                  ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.home_outlined, size: 26, color: Color(0xFFB14ABA)),
+                      Icon(
+                        Icons.home_outlined,
+                        size: 26,
+                        color: Color(0xFFB14ABA),
+                      ),
                       SizedBox(height: 2),
-                      Text('Home', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: Color(0xFFB14ABA))),
+                      Text(
+                        'Home',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFB14ABA),
+                        ),
+                      ),
                     ],
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const RemindersPage())),
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const RemindersPage(),
+                    ),
+                  ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.notifications_none, size: 26, color: Colors.black54),
+                      Icon(
+                        Icons.notifications_none,
+                        size: 26,
+                        color: Colors.black54,
+                      ),
                       SizedBox(height: 2),
-                      Text('Reminders', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                      Text(
+                        'Reminders',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
                     ],
                   ),
                 ),
                 const SizedBox(width: 55),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SosScreen())),
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SosScreen()),
+                  ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.warning_amber_outlined, size: 26, color: Colors.black54),
+                      Icon(
+                        Icons.warning_amber_outlined,
+                        size: 26,
+                        color: Colors.black54,
+                      ),
                       SizedBox(height: 2),
-                      Text('Emergency', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                      Text(
+                        'Emergency',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
                     ],
                   ),
                 ),
                 GestureDetector(
-                  onTap: () => Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const SettingsPage())),
+                  onTap: () => Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(),
+                    ),
+                  ),
                   child: const Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.settings, size: 26, color: Colors.black54),
                       SizedBox(height: 2),
-                      Text('Settings', style: TextStyle(fontSize: 12, color: Colors.black54)),
+                      Text(
+                        'Settings',
+                        style: TextStyle(fontSize: 12, color: Colors.black54),
+                      ),
                     ],
                   ),
                 ),
@@ -653,7 +891,10 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
               child: Container(
                 width: 55,
                 height: 55,
-                decoration: const BoxDecoration(color: Colors.black, shape: BoxShape.circle),
+                decoration: const BoxDecoration(
+                  color: Colors.black,
+                  shape: BoxShape.circle,
+                ),
                 child: const Icon(Icons.add, color: Colors.white, size: 40),
               ),
             ),
@@ -669,7 +910,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
             width: double.infinity,
@@ -683,18 +926,31 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const SizedBox(width: 24),
-                      const Text("Add Person", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF6B1D73))),
+                      const Text(
+                        "Add Person",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF6B1D73),
+                        ),
+                      ),
                       GestureDetector(
                         onTap: () {
                           _resetForm();
                           Navigator.pop(context);
                         },
-                        child: const Icon(Icons.close, color: Color(0xFF6B1D73)),
+                        child: const Icon(
+                          Icons.close,
+                          color: Color(0xFF6B1D73),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Text("Name", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Name",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 5),
                   TextField(
                     controller: _nameController,
@@ -712,31 +968,48 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text("Upload Face Photo", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Upload Face Photo",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       if (_croppedFaceImage != null) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Text(
                             "Face Detected",
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ] else if (_selectedImage != null) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.orange,
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Text(
                             "No Face",
-                            style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                       ],
@@ -755,14 +1028,16 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                       height: 100,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: _selectedImage != null ? const Color(0xFFF8F4F9) : Colors.white,
+                        color: _selectedImage != null
+                            ? const Color(0xFFF8F4F9)
+                            : Colors.white,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: _croppedFaceImage != null
                               ? Colors.green
                               : _selectedImage != null
-                                  ? Colors.orange
-                                  : Colors.grey.shade300,
+                              ? Colors.orange
+                              : Colors.grey.shade300,
                           width: _selectedImage != null ? 2 : 1,
                         ),
                         boxShadow: [
@@ -777,7 +1052,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                           ? const Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                CircularProgressIndicator(color: Color(0xFF6B1D73)),
+                                CircularProgressIndicator(
+                                  color: Color(0xFF6B1D73),
+                                ),
                                 SizedBox(height: 8),
                                 Text(
                                   "Detecting face...",
@@ -790,49 +1067,60 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                               ],
                             )
                           : _selectedImage == null
-                              ? const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.upload, size: 30, color: Color(0xFF6B1D73)),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      "Click to Upload Photo",
-                                      style: TextStyle(
-                                        color: Color(0xFF6B1D73),
-                                        fontWeight: FontWeight.w500,
-                                        fontSize: 12,
-                                      ),
-                                    ),
-                                  ],
-                                )
-                              : Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                      decoration: BoxDecoration(
-                                        color: _croppedFaceImage != null ? Colors.green : Colors.orange,
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Text(
-                                        _croppedFaceImage != null ? "Face Detected & Cropped" : "No Face Detected",
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                    const SizedBox(height: 8),
-                                    const Text(
-                                      "Tap to change photo",
-                                      style: TextStyle(
-                                        color: Color(0xFF6B1D73),
-                                        fontSize: 10,
-                                      ),
-                                    ),
-                                  ],
+                          ? const Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.upload,
+                                  size: 30,
+                                  color: Color(0xFF6B1D73),
                                 ),
+                                SizedBox(height: 8),
+                                Text(
+                                  "Click to Upload Photo",
+                                  style: TextStyle(
+                                    color: Color(0xFF6B1D73),
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            )
+                          : Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: _croppedFaceImage != null
+                                        ? Colors.green
+                                        : Colors.orange,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    _croppedFaceImage != null
+                                        ? "Face Detected & Cropped"
+                                        : "No Face Detected",
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                const Text(
+                                  "Tap to change photo",
+                                  style: TextStyle(
+                                    color: Color(0xFF6B1D73),
+                                    fontSize: 10,
+                                  ),
+                                ),
+                              ],
+                            ),
                     ),
                   ),
                   const SizedBox(height: 30),
@@ -840,7 +1128,10 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                     width: double.infinity,
                     height: 45,
                     child: ElevatedButton(
-                      onPressed: _isUploading || _nameController.text.trim().isEmpty || _selectedImage == null
+                      onPressed:
+                          _isUploading ||
+                              _nameController.text.trim().isEmpty ||
+                              _selectedImage == null
                           ? null
                           : () async {
                               setDialogState(() => _isUploading = true);
@@ -849,7 +1140,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6B1D73),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         disabledBackgroundColor: Colors.grey.shade300,
                       ),
                       child: _isUploading
@@ -858,7 +1151,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(
@@ -880,15 +1175,21 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
     );
   }
 
-  void _showEditDialog(String personId, String currentName, String? currentPhotoUrl) {
+  void _showEditDialog(
+    String personId,
+    String currentName,
+    String? currentPhotoUrl,
+  ) {
     _resetForm();
     _nameController.text = currentName;
-    
+
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setDialogState) => Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           insetPadding: const EdgeInsets.symmetric(horizontal: 16),
           child: Container(
             width: double.infinity,
@@ -915,12 +1216,18 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                           _resetForm();
                           Navigator.pop(context);
                         },
-                        child: const Icon(Icons.close, color: Color(0xFF6B1D73)),
+                        child: const Icon(
+                          Icons.close,
+                          color: Color(0xFF6B1D73),
+                        ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 20),
-                  const Text("Name", style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text(
+                    "Name",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                   const SizedBox(height: 5),
                   TextField(
                     controller: _nameController,
@@ -938,11 +1245,17 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                   const SizedBox(height: 20),
                   Row(
                     children: [
-                      const Text("Current Photo", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const Text(
+                        "Current Photo",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
                       if (_croppedFaceImage != null) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.green,
                             borderRadius: BorderRadius.circular(12),
@@ -959,7 +1272,10 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                       ] else if (_selectedImage != null) ...[
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.orange,
                             borderRadius: BorderRadius.circular(12),
@@ -993,8 +1309,11 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                           backgroundColor: Colors.white,
                           backgroundImage: _selectedImage != null
                               ? FileImage(_selectedImage!)
-                              : (currentPhotoUrl != null ? NetworkImage(currentPhotoUrl) : null),
-                          child: _selectedImage == null && currentPhotoUrl == null
+                              : (currentPhotoUrl != null
+                                    ? NetworkImage(currentPhotoUrl)
+                                    : null),
+                          child:
+                              _selectedImage == null && currentPhotoUrl == null
                               ? const Icon(Icons.person, color: Colors.grey)
                               : null,
                         ),
@@ -1005,7 +1324,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                _selectedImage != null ? "New photo selected" : "Current photo",
+                                _selectedImage != null
+                                    ? "New photo selected"
+                                    : "Current photo",
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w500,
                                   fontSize: 12,
@@ -1020,13 +1341,18 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                                         setDialogState(() {});
                                       },
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 4,
+                                  ),
                                   decoration: BoxDecoration(
                                     color: const Color(0xFF6B1D73),
                                     borderRadius: BorderRadius.circular(8),
                                   ),
                                   child: Text(
-                                    _isDetectingFace ? "Detecting..." : "Change Photo",
+                                    _isDetectingFace
+                                        ? "Detecting..."
+                                        : "Change Photo",
                                     style: const TextStyle(
                                       color: Colors.white,
                                       fontSize: 10,
@@ -1046,7 +1372,8 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                     width: double.infinity,
                     height: 45,
                     child: ElevatedButton(
-                      onPressed: _isUploading || _nameController.text.trim().isEmpty
+                      onPressed:
+                          _isUploading || _nameController.text.trim().isEmpty
                           ? null
                           : () async {
                               setDialogState(() => _isUploading = true);
@@ -1060,7 +1387,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                             },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF6B1D73),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                         disabledBackgroundColor: Colors.grey.shade300,
                       ),
                       child: _isUploading
@@ -1069,7 +1398,9 @@ class _FaceManagementPageState extends State<FaceManagementPage> {
                               height: 20,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                valueColor: AlwaysStoppedAnimation<Color>(
+                                  Colors.white,
+                                ),
                               ),
                             )
                           : const Text(
