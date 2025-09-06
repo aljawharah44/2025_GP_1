@@ -61,7 +61,6 @@ dependencies:
   cloud_firestore: ^4.17.3
   firebase_storage: ^11.6.7
   url_launcher: ^6.3.0
-  telephony: ^0.2.0
   audioplayers: ^6.0.0
   path_provider: ^2.1.1
   permission_handler: ^11.0.1
@@ -69,6 +68,8 @@ dependencies:
   # للكشف عن الوجه
   google_mlkit_face_detection: ^0.10.0
 
+  telephony:
+    path: ./packages/telephony
   # للتعامل مع ML/TFLite (استخراج Embeddings)
   tflite_flutter: ^0.10.4
 
@@ -91,6 +92,8 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^5.0.0
+
+ 
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
