@@ -8,6 +8,7 @@ import './settings.dart';
 import './reminders.dart';
 import './sos_screen.dart';
 import './location_permission_screen.dart';
+import './contact_info_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -79,23 +80,30 @@ class _HomePageState extends State<HomePage> {
                   Container(
                     height: 170,
                     decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [purple, purple.withOpacity(0.8)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
                       borderRadius: const BorderRadius.only(
                         bottomLeft: Radius.circular(40),
                       ),
-                      image: const DecorationImage(
-                        image: AssetImage('assets/images/glass.png'),
-                        fit: BoxFit.cover,
-                      ),
                     ),
+                  ),
+                  // Logo in top-left corner (moved higher)
+                  Positioned(
+                    top: 15,
+                    left: 16,
                     child: Container(
-                      decoration: BoxDecoration(
-                        color: purple.withOpacity(0.7),
-                        borderRadius: const BorderRadius.only(
-                          bottomLeft: Radius.circular(40),
-                        ),
+                      width: 120,
+                      height: 120,
+                      child: Image.asset(
+                        'assets/images/logo.png', // Replace with your logo path
+                        fit: BoxFit.contain,
                       ),
                     ),
                   ),
+                  // Profile icon in top-right corner
                   Positioned(
                     top: 40,
                     right: 16,
@@ -115,19 +123,6 @@ class _HomePageState extends State<HomePage> {
                       ),
                     ),
                   ),
-                  const Positioned(
-                    bottom: 30,
-                    left: 20,
-                    child: Text(
-                      'Key Features',
-                      style: TextStyle(
-                        fontFamily: 'PlayfairDisplay',
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
                 ],
               ),
               const SizedBox(height: 16),
@@ -136,16 +131,17 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   children: [
                     _buildFeatureCard('Face Recognition'),
-                    _buildFeatureCard('Text Reading', highlight: true),
-                    _buildFeatureCard('Alerts / Reminders'),
-                    _buildFeatureCard('Currency Recognition', highlight: true),
-                    _buildFeatureCard('Color Identification'),
+                    _buildFeatureCard('Emergency Contact', highlight: true),
+                    _buildFeatureCard('Text Reading'),
+                    _buildFeatureCard('Alerts / Reminders', highlight: true),
+                    _buildFeatureCard('Currency Recognition'),
+                    _buildFeatureCard('Color Identification', highlight: true),
                   ],
                 ),
               ),
             ],
           ),
-          // Profile incomplete overlay - FIXED LINE
+          // Profile incomplete overlay
           if (!_isLoading && _isProfileIncomplete && !_isDismissed)
             Container(
               color: Colors.black.withOpacity(0.5),
@@ -360,6 +356,10 @@ class _HomePageState extends State<HomePage> {
         imageName = 'facerecog.jpg';
         description = 'Identify and recognize people';
         break;
+      case 'Emergency Contact':
+        imageName = 'emergency_contacts.jpg';
+        description = 'Manage your emergency contacts';
+        break;
       case 'Text Reading':
         imageName = 'textreading.jpg';
         description = 'Read printed text aloud';
@@ -396,8 +396,10 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: imageName.isNotEmpty
-                ? Image.asset('assets/images/$imageName', fit: BoxFit.contain)
-                : const Icon(Icons.image, color: Colors.white),
+                ? (title == 'Emergency Contact' 
+                    ? const Icon(Icons.contact_emergency, color: Colors.black, size: 32)
+                    : Image.asset('assets/images/$imageName', fit: BoxFit.contain))
+                : const Icon(Icons.image, color: Colors.grey, size: 20),
           ),
           title: Text(
             title,
@@ -410,8 +412,14 @@ class _HomePageState extends State<HomePage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) =>
-                      const FaceListPage(), // Changed from FaceManagementPage to FaceListPage
+                  builder: (context) => const FaceListPage(),
+                ),
+              );
+            } else if (title == 'Emergency Contact') {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ContactInfoPage(),
                 ),
               );
             } else if (title == 'Alerts / Reminders') {
