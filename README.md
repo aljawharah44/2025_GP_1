@@ -16,7 +16,6 @@ Additionally, the app includes an emergency SOS feature with GPS tracking, allow
 
 # Tools and Programming Languages:
 • Flutter. • Visual Studio Code. • Python. • GitHub. • Jira. • Android studio. • Canva
-## Technologies
 
 - Flutter  
 - Visual Studio Code  
