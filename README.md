@@ -1,3 +1,6 @@
 # Munir
 
-![MIRSAD Logo](images/logo.png)
+<p align="center">
+  <img src="assets/images/theLogo.jpg" alt="Munir Logo" width="400"/>
+</p>
+
