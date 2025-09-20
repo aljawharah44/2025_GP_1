@@ -9,8 +9,7 @@ Munir is an Android mobile application integrated with smart glasses, designed t
 
 The application leverages AI services such as IBM Watson for vision and speech, Tesseract OCR for text recognition, and Firebase for secure data storage and authentication. Users can interact with Munir through simple voice and touch commands, while caregivers can also provide support via the mobile app. Reports and reminders are delivered in real time, ensuring users stay informed and supported throughout their daily activities.  
 
-Munir provides clear voice feedback for every interaction, helping users understand the system’s responses without the need for visual assistance.  
-Additionally, the app includes an emergency SOS feature with GPS tracking, allowing trusted contacts to receive instant alerts and location data, further enhancing user safety.
+Munir provides clear voice feedback for every interaction, helping users understand the system’s responses without the need for visual assistance. Additionally, the app includes an emergency SOS feature with GPS tracking, allowing trusted contacts to receive instant alerts and location data, further enhancing user safety.
 
 # Tools and Programming Languages:
 - Flutter  
