@@ -15,8 +15,6 @@ Munir provides clear voice feedback for every interaction, helping users underst
 Additionally, the app includes an emergency SOS feature with GPS tracking, allowing trusted contacts to receive instant alerts and location data, further enhancing user safety.
 
 # Tools and Programming Languages:
-• Flutter. • Visual Studio Code. • Python. • GitHub. • Jira. • Android studio. • Canva
-
 - Flutter  
 - Visual Studio Code  
 - Python  
@@ -35,6 +33,13 @@ Additionally, the app includes an emergency SOS feature with GPS tracking, allow
   <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/canva/canva-original.svg" alt="Canva" width="60" height="60"/>
 </p>
 
+# Launching Instructions: 
+
+To run Munir: 
+1-  ensure Flutter SDK and Android Studio/Xcode are installed
+2- clone the repository
+3- run flutter pub get
+4- connect a device or emulator and start the app using flutter run
 
 
 
